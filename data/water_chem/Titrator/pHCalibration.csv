@@ -1,1 +1,46 @@
-Date,ZeroPoint,Slope,pH4 (171.4 mV),pH7 (0 mV),pH10 (-171.4 mV),temp,Calib.status,notes,Initials20180710,6.93,-57.12,167.20,-5.20,-180.70,20.30,pass,LabX gave 2 zero point and slope values; took 1st,ES20180711,6.80,-56.55,168.30,-2.40,-179.70,20.50,pass,LabX gave 2 zero point and slope values; took 1st,ES20180712,7.02,-55.83,168.40,0.00,-178.40,20.90,pass,LabX gave 2 zero point and slope values; took 1st,ES20180920,6.92,-57.23,165.30,-6.40,-181.20,17.70,pass,None,20180921,6.91,-57.65,166.30,-6.20,-181.60,19.60,pass,None,20180923,6.92,-57.47,166.00,-6.20,-181.30,18.90,pass,None,20180924,6.93,-57.46,165.50,-5.40,-180.80,17.80,pass,Slight jump in pH 4,20181030,7.07,-57.79,168.80,1.50,-175.40,16.40,pass,used Cal2 values,20181102,7.03,-57.45,169.70,-0.10,-176.00,16.70,pass,used Cal2 values,20181107,7.03,-57.87,170.60,0.10,-176.30,18.60,pass,used Cal2 values,20181112,7.05,-55.93,168.90,0.10,-171.80,14.80,pass,used Cal2 values,20181116,7.05,-56.25,169.50,0.10,-172.10,16.20,pass,used second zero and slope values,KRM20181119,7.04,-55.79,168.30,0.00,-170.80,16.30,pass,used second zero and slope values,KRM20181128,7.18,-57.81,167.40,7.80,-169.20,16.50,pass?,used second zero and slope values,KRM20181205,7.19,-59.94,167.40,7.50,-162.20,13.10,fail,used second zero and slope values,KRM20181205,7.06,-53.23,165.30,0.00,-164.70,12.50,??????,reran b/c of inconsistency,KRM20181205,7.06,-54.16,166.30,0.10,-167.10,13.30,pass,used second zero and slope values,KRM20181212,--,--,--,--,--,--,--,Probe is very inconsistent during calibration; all 3 runs fail- samples poisoned. Tanks 1-4 run on 20181219 and tanks 5-6 run on 20190103.,KRM20181219,7.01,-55.96,170.30,-2.30,-174.50,14.30,pass,New probe and Cal2 values used; very constant. Tanks 1-4 from 20181212 run today. 20181219 samples poisoned. Used second slope and zero values,KRM20190102,6.94,-56.20,165.40,-6.60,-178.10,13.80,pass,new buffer,ES/NS/EC20190103,6.93,-56.40,165.60,-6.30,-178.70,17.10,pass,used second zero and slope values,KRM20190106,6.93,-56.01,164.90,-6.50,-178.50,15.70,pass,Temp was ~1.5C lower for pH10 (14.7C vs 16C); used second zero and slope values,KRM20190114,6.92,-56.02,165.10,-6.90,-178.30,16.60,pass,used second zero and slope values,KRM20190419,7.00,-56.32,169.20,-1.90,-173.90,17.50,pass,used second zero and slope values,KRM20190502,6.97,-56.36,168.70,-3.40,-175.60,17.60,pass,used second zero and slope values,KRM20190509,6.96,-57.33,171.10,-2.70,-175.60,22.10,pass,used second zero and slope values,KRM20190529,6.98,-56.74,170.40,-2.50,-175.10,19.70,pass,used second zero and slope values,ST20190906,7.03,-55.47,171.30,0.30,-168.60,19.20,pass,used second zero and slope values,ST20190913,7.04,-55.41,172.60,1.10,-166.90,21.00,PASS,used second zero and slope values,ST20190919,7.08,-54.03,172.30,2.90,-157.90,19.70,PASS,used second zero and slope values,ST20190927,7.03,-56.39,172.10,0.20,-171.80,18.40,PASS,used second zero and slope values,ST20191011,7.05,-55.34,169.20,-0.10,-170.80,13.50,PASS,used second zero and slope values,ST20191219,7.14,-55.33,175.00,5.10,-164.00,16.60,PASS,used second zero and slope values,ST,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Date,ZeroPoint,Slope,pH4 (171.4 mV),pH7 (0 mV),pH10 (-171.4 mV),temp,Calib.status,notes,Initials
+20180710,6.93,-57.12,167.2,-5.2,-180.7,20.3,pass,LabX gave 2 zero point and slope values; took 1st,ES
+20180711,6.8,-56.55,168.3,-2.4,-179.7,20.5,pass,LabX gave 2 zero point and slope values; took 1st,ES
+20180712,7.02,-55.83,168.4,0,-178.4,20.9,pass,LabX gave 2 zero point and slope values; took 1st,ES
+20180920,6.92,-57.23,165.3,-6.4,-181.2,17.7,pass,None,
+20180921,6.91,-57.65,166.3,-6.2,-181.6,19.6,pass,None,
+20180923,6.92,-57.47,166,-6.2,-181.3,18.9,pass,None,
+20180924,6.93,-57.46,165.5,-5.4,-180.8,17.8,pass,Slight jump in pH 4,
+20181030,7.07,-57.79,168.8,1.5,-175.4,16.4,pass,used Cal2 values,
+20181102,7.03,-57.45,169.7,-0.1,-176,16.7,pass,used Cal2 values,
+20181107,7.03,-57.87,170.6,0.1,-176.3,18.6,pass,used Cal2 values,
+20181112,7.05,-55.93,168.9,0.1,-171.8,14.8,pass,used Cal2 values,
+20181116,7.05,-56.25,169.5,0.1,-172.1,16.2,pass,used second zero and slope values,KRM
+20181119,7.04,-55.79,168.3,0,-170.8,16.3,pass,used second zero and slope values,KRM
+20181128,7.18,-57.81,167.4,7.8,-169.2,16.5,pass?,used second zero and slope values,KRM
+20181205,7.19,-59.94,167.4,7.5,-162.2,13.1,fail,used second zero and slope values,KRM
+20181205,7.06,-53.23,165.3,0,-164.7,12.5,??????,reran b/c of inconsistency,KRM
+20181205,7.06,-54.16,166.3,0.1,-167.1,13.3,pass,used second zero and slope values,KRM
+20181219,7.01,-55.96,170.3,-2.3,-174.5,14.3,pass,New probe and Cal2 values used; very constant. Tanks 1-4 from 20181212 run today. 20181219 samples poisoned. Used second slope and zero values,KRM
+20190102,6.94,-56.2,165.4,-6.6,-178.1,13.8,pass,new buffer,ES/NS/EC
+20190103,6.93,-56.4,165.6,-6.3,-178.7,17.1,pass,used second zero and slope values,KRM
+20190106,6.93,-56.01,164.9,-6.5,-178.5,15.7,pass,Temp was ~1.5C lower for pH10 (14.7C vs 16C); used second zero and slope values,KRM
+20190114,6.92,-56.02,165.1,-6.9,-178.3,16.6,pass,used second zero and slope values,KRM
+20190419,7,-56.32,169.2,-1.9,-173.9,17.5,pass,used second zero and slope values,KRM
+20190502,6.97,-56.36,168.7,-3.4,-175.6,17.6,pass,used second zero and slope values,KRM
+20190509,6.96,-57.33,171.1,-2.7,-175.6,22.1,pass,used second zero and slope values,KRM
+20190529,6.98,-56.74,170.4,-2.5,-175.1,19.7,pass,used second zero and slope values,ST
+20190906,7.03,-55.47,171.3,0.3,-168.6,19.2,pass,used second zero and slope values,ST
+20190913,7.04,-55.41,172.6,1.1,-166.9,21,PASS,used second zero and slope values,ST
+20190919,7.08,-54.03,172.3,2.9,-157.9,19.7,PASS,used second zero and slope values,ST
+20190927,7.03,-56.39,172.1,0.2,-171.8,18.4,PASS,used second zero and slope values,ST
+20191011,7.05,-55.34,169.2,-0.1,-170.8,13.5,PASS,used second zero and slope values,ST
+20191219,7.14,-55.33,175,5.1,-164,16.6,PASS,used second zero and slope values,ST
+20190121,6.928,-59.01,164.3,-7,-179.4,14.2,pass,2nd zeropt and slope, SJG
+20190125,6.925,-56.71,166.54,-6.1,-179.2,17.9,pass,2nd zeropt and slope,SJG
+20190128,6.922,-56.76,166.7,-6,-179,18.7,pass,2nd zeropt and slope,SJG
+20190201,6.933,-56.15,164.6,-6.6,-179.1,14.6,pass,2nd zeropt and slope,SJG
+20190203,6.934,-56.28,165.5,-6.2,-178.7,158,pass,2nd zeropt and slope,SJG
+20190205,6.938,-55.74,164.6,-6.5,-178.3,13.8,pass,2nd zeropt and slope,SJG
+20190209,6.944,-55.38,164,-6.5,-178,12.3,pass,2nd zeropt and slope,SJG
+20190218,6.938,-55.96,164.9,-6.4,-178.4,14.5,pass,2nd zeropt and slope,SJG
+20190223,6.947,-56.02,165.5,-5.7,-177.8,15.2,pass,2nd zeropt and slope,SJG
+20190319,6.966,-56.14,166.9,-4.5,-176.6,15.8,pass,2nd zeropt and slope,SJG
+20190331,6.963,-56.52,168.7,-3.7,-175.9,18.6,pass,2nd zeropt and slope,SJG
+20190404,6.979,-56.39,169,-2.9,-174.9,18.2,pass,2nd zeropt and slope,SJG
+20190408,6.988,-56.44,159.1,-2.4,-174.6,18.2,pass,2nd zeropt and slope,SJG

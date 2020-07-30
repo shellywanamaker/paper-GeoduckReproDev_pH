@@ -46,6 +46,7 @@ F <-96485.339924 #Faraday constant in coulombs mol-1
 
 #read in probe measurements of pH, temperature, and salinity from tanks
 daily <- read.csv("Titrator/Daily_Temp_pH_Sal.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
+daily <- daily %>% filter(Date < 20190214)
 
 #merge with Seawater chemistry file
 SW.chem <- merge(pH.cals, daily, by="Calib.Date")

@@ -45,7 +45,7 @@ chem.om$Tank <- substr(chem.om$Tank,14,14)
 
 #####################   make long table ################################################  #
 chem.treat <- chem.om %>% select(-("Tank")) # drop "Tank" to create long table via meltin next line
-chem.treat.LONG <- melt(chem.2, id.vars=c("Date", "Treatment")) # uses tidyr to make a long table from wide
+chem.treat.LONG <- melt(chem.treat, id.vars=c("Date", "Treatment")) # uses tidyr to make a long table from wide
 chem.tank <- chem.om %>% select(-("Treatment")) # drop "Tank" to create long table via meltin next line
 chem.tank.LONG <- melt(chem.tank, id.vars=c("Date", "Tank")) # uses tidyr to make a long table from wide
 

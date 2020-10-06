@@ -40,17 +40,25 @@ egg_size_m$date <- gsub("20190221", "93 + 8 day recovery",egg_size_m$date)
 plot egg size 
 ```{r}
 #first check distribution
-ggplot(data = egg_size_m,aes(x = egg_size, color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(x = "density", y = expression(paste(mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
+
+p <- ggplot(data = egg_size_m,aes(x = egg_size, color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(x = "density", y =expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
 
 #it's left skewed so try log transformation
-ggplot(data = egg_size_m,aes(x = log(egg_size,2), color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(x = "density", y = expression(paste(log[2]," ",mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
+q <- ggplot(data = egg_size_m,aes(x = log(egg_size,2), color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(x = "density", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
 
 #plot boxplots
-ggplot(data = egg_size_m,aes(x = date, y = egg_size, color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+r <- ggplot(data = egg_size_m,aes(x = date, y = egg_size, color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
 
 #after log transformation
-ggplot(data = egg_size_m,aes(x = date, y = log(egg_size,2), color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," ",mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+s <- ggplot(data = egg_size_m,aes(x = date, y = log(egg_size,2), color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
 
+jpeg("egg_size_dist.jpg", width = 12, height = 6, units = "in", res = 300)
+ggpubr::ggarrange(p,r,labels = "AUTO", common.legend = T)
+dev.off()
+
+jpeg("log_egg_size_dist.jpg", width = 12, height = 6, units = "in", res = 300)
+ggpubr::ggarrange(q,s,labels = "AUTO", common.legend = T)
+dev.off()
 
 summary(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))
 

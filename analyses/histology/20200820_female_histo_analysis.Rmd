@@ -53,6 +53,10 @@ ggplot(data = egg_size_m,aes(x = date, y = log(egg_size,2), color = pH, group = 
 
 
 summary(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))
+
+View(tidy(TukeyHSD(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))))
+
+
 ```
 calculate proportions
 ```{r}

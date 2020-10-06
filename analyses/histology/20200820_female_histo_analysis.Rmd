@@ -18,9 +18,42 @@ library(lme4)
 Read in data
 ```{r}
 female_data <- read.csv("../../data/histology/20200820_Female_Gonad_RESULTS.csv", stringsAsFactors = F,colClasses = c(rep("character",4),rep("numeric",7)))
+
+
+egg_size <- read.csv("../../data/histology/Female_Gonad/egg_size.csv", stringsAsFactors = F, colClasses = c("character","character","numeric"))
+```
+
+format egg size df
+```{r}
+#rename columns
+colnames(egg_size) <- c("date", "sample_ID", "egg_size")
+
+#merge egg size data with treatment info
+egg_size_m <- merge(female_data[,c("date", "sample_ID","pH")], egg_size)
+
+egg_size_m$date <- gsub("20190123", "72",egg_size_m$date)
+
+egg_size_m$date <- gsub("20190221", "93 + 8 day recovery",egg_size_m$date)
 ```
 
 
+plot egg size 
+```{r}
+#first check distribution
+ggplot(data = egg_size_m,aes(x = egg_size, color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(x = "density", y = expression(paste(mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
+
+#it's left skewed so try log transformation
+ggplot(data = egg_size_m,aes(x = log(egg_size,2), color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(x = "density", y = expression(paste(log[2]," ",mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
+
+#plot boxplots
+ggplot(data = egg_size_m,aes(x = date, y = egg_size, color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+
+#after log transformation
+ggplot(data = egg_size_m,aes(x = date, y = log(egg_size,2), color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," ",mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+
+
+summary(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))
+```
 calculate proportions
 ```{r}
 female_data$prop_egg <- (female_data$egg.area..based.on.ind.eggs. / female_data$total.area..um.) *100
@@ -102,18 +135,18 @@ female_data_STACKED_filt$date <- gsub("20190221", "93 + 8 day recovery",female_d
 
 plot egg size only 
 ```{r}
-c <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "mean.egg.size"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(mu,"m", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+c <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "mean.egg.size"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste("mean egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"),, axis.text.x = element_text(angle = 45))
 
-d <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "number.of.eggs.per.um2"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste("number of eggs per ",mu,"m"^2, sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+d <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "number.of.eggs.per.um2"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste("number of eggs per ",mu,"m"^2," tissue", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"),, axis.text.x = element_text(angle = 45))
 
-e <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "prop_cnx_tissue_indve"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = "connective tissue\nproportion (%)")+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+e <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "prop_cnx_tissue_indve"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = "connective tissue\nproportion (%)")+ theme(plot.margin = unit(c(rep(1,4)), "lines"),, axis.text.x = element_text(angle = 45))
 
-f <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "prop_no_tissue"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = "follicle area proportion (%)") + theme(plot.margin = unit(c(rep(1,4)), "lines"))
+f <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "prop_no_tissue"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = "follicle area proportion (%)") + theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45))
 
 
-jpeg("all_samples_boxplots_newlabs.jpg", width = 6, height = 6, units = "in", res = 300)
+jpeg("all_samples_boxplots_newlabs.jpg", width = 10, height = 3, units = "in", res = 300)
 
-ggpubr::ggarrange(c,d,e,f, labels = "AUTO", vjust = 1,common.legend = T, nrow = 2,ncol = 2,legend = "bottom", font.label = c(size = 18), align = "hv")
+ggpubr::ggarrange(c,d,e,f, labels = "AUTO", vjust = 1,common.legend = T, nrow = 1,ncol = 4,legend = "bottom", font.label = c(size = 18), align = "hv")
 dev.off()
 ```
 

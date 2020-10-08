@@ -1,8 +1,9 @@
 ---
 title: "pH Female Broodstock Histology Analysis"
 author: "Shelly Trigg"
-date: "8/28/2020"
-output: rmarkdown::github_document
+date: "10/07/2020"
+output: html_document
+tags: geoduck pH reproductive development histology
 ---
 
 Load libraries
@@ -13,11 +14,13 @@ library(rstatix)
 library(dplyr)
 library(broom)
 library(lme4)
+library(kableExtra)
+library(tidyr)
 ```
 
 Read in data
 ```{r}
-female_data <- read.csv("../../data/histology/20200820_Female_Gonad_RESULTS.csv", stringsAsFactors = F,colClasses = c(rep("character",4),rep("numeric",7)))
+female_data <- read.csv("../../data/histology/Female_Gonad/20200820_Female_Gonad_RESULTS.csv", stringsAsFactors = F,colClasses = c(rep("character",4),rep("numeric",7)))
 
 
 egg_size <- read.csv("../../data/histology/Female_Gonad/egg_size.csv", stringsAsFactors = F, colClasses = c("character","character","numeric"))
@@ -52,6 +55,16 @@ r <- ggplot(data = egg_size_m,aes(x = date, y = egg_size, color = pH, group = in
 #after log transformation
 s <- ggplot(data = egg_size_m,aes(x = date, y = log(egg_size,2), color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
 
+#plot egg size without transformation
+ggpubr::ggarrange(p,r,labels = "AUTO", common.legend = T)
+
+
+#plot eggs size after transformation
+ggpubr::ggarrange(q,s,labels = "AUTO", common.legend = T)
+```
+
+Save plots
+```{r}
 jpeg("egg_size_dist.jpg", width = 12, height = 6, units = "in", res = 300)
 ggpubr::ggarrange(p,r,labels = "AUTO", common.legend = T)
 dev.off()
@@ -59,15 +72,27 @@ dev.off()
 jpeg("log_egg_size_dist.jpg", width = 12, height = 6, units = "in", res = 300)
 ggpubr::ggarrange(q,s,labels = "AUTO", common.legend = T)
 dev.off()
+```
 
-summary(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))
 
-View(tidy(TukeyHSD(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))))
-
+Egg size stats
+```{r}
+tidy(TukeyHSD(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))) %>%
+  kbl(caption = "2-way ANOVA: log2 egg size ~ pH * time") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 
 ```
-calculate proportions
+
+Save 2-way ANOVA results
 ```{r}
+write.table(tidy(TukeyHSD(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))),"2wayAOV_Tuk_egg_size.txt",sep = "\t", quote = F, row.names = F)
+```
+
+
+Tissue proportions analysis
+```{r}
+#calculate proportions
+
 female_data$prop_egg <- (female_data$egg.area..based.on.ind.eggs. / female_data$total.area..um.) *100
 
 female_data$prop_no_tissue <- (female_data$no.tissue.area / female_data$total.area..um.) *100
@@ -77,29 +102,179 @@ female_data$prop_cnx_tissue_indve <- (female_data$connective.tissue.area..egg.ba
 #create column for relative # of eggs
 female_data$number.of.eggs.per.um2 <- (female_data$number.of.eggs/female_data$total.area..um.)
 
-
 female_data$pH_date <- paste(female_data$date, female_data$pH, sep = "_")
 
+#convert female data to long format
 
-
-```
-
-convert to long format
-
-```{r}
 female_data_STACKED <- tidyr::gather(female_data,"metric", "um", 5:(ncol(female_data)-1))
 
 female_data_STACKED$um <- as.numeric(female_data_STACKED$um)
+
+
+
+
+#reformat data and calculate mean and sd proportions
+female_data_STACKED_props <- female_data_STACKED[grep("prop", female_data_STACKED$metric),]%>%group_by(date, pH,metric) %>% summarise(mean = mean(um), sd =sd(um)) %>% mutate(y_pos = cumsum(mean))
+
+#convert metric to ordered factor
+female_data_STACKED_props$metric <- factor(female_data_STACKED_props$metric, levels = rev(c("prop_cnx_tissue_indve","prop_egg", "prop_no_tissue")))
+
+
+#chi sq to compare 20190123 amb vs. low
+ct <- data.frame(female_data_STACKED_props[grep("20190123", female_data_STACKED_props$date),c("pH","mean","metric")]%>% pivot_wider(names_from = metric, values_from = mean))
+
+rownames(ct) <- ct$pH
+
+ct <- ct[,-1]
+
+ct_a <- chisq.test(ct)
+ct_a <- tidy(ct_a)
+ct_a$comparison <- "ambient:72-low:72"
+
+
+#chi sq to compare 20190123 amb vs. 20190221 amb
+ct <- data.frame(female_data_STACKED_props[grep("ambient", female_data_STACKED_props$pH),c("date","mean","metric")]%>% pivot_wider(names_from = metric, values_from = mean))
+
+rownames(ct) <- ct$pH
+
+ct <- ct[,-1]
+
+ct_b <- chisq.test(ct)
+ct_b <- tidy(ct_b)
+ct_b$comparison <- "ambient:72-ambient:93 + 8 day recovery"
+
+#chi sq to compare 20190123 low vs. 20190221 low
+ct <- data.frame(female_data_STACKED_props[grep("low", female_data_STACKED_props$pH),c("date","mean","metric")]%>% pivot_wider(names_from = metric, values_from = mean))
+
+rownames(ct) <- ct$pH
+
+ct <- ct[,-1]
+
+ct_c <- chisq.test(ct)
+ct_c <- tidy(ct_c)
+ct_c$comparison <- "low:72-low:93 + 8 day recovery"
+
+
+
+#chi sq to compare 20190221 amb vs. 20190221 low
+ct <- data.frame(female_data_STACKED_props[grep("20190221", female_data_STACKED_props$date),c("pH","mean","metric")]%>% pivot_wider(names_from = metric, values_from = mean))
+
+rownames(ct) <- ct$pH
+
+ct <- ct[,-1]
+
+ct_d <- chisq.test(ct)
+ct_d <- tidy(ct_d)
+ct_d$comparison <- "ambient:93 + 8 day recovery-low:93 + 8 day recovery"
+
+
+#chi sq to compare 20190123 amb vs. 20190221 low
+ct <- data.frame(female_data_STACKED_props[which(female_data_STACKED_props$date=="20190123" & female_data_STACKED_props$pH =="ambient" | female_data_STACKED_props$date=="20190221" & female_data_STACKED_props$pH =="low"),c("pH","mean","metric")]%>% pivot_wider(names_from = metric, values_from = mean))
+
+rownames(ct) <- ct$pH
+
+ct <- ct[,-1]
+
+ct_e <- chisq.test(ct)
+ct_e <- tidy(ct_e)
+ct_e$comparison <- "ambient:72-low:93 + 8 day recovery"
+
+
+#chi sq to compare 20190221 amb vs. 20190123 low
+ct <- data.frame(female_data_STACKED_props[which(female_data_STACKED_props$date=="20190221" & female_data_STACKED_props$pH =="ambient" | female_data_STACKED_props$date=="20190123" & female_data_STACKED_props$pH =="low"),c("pH","mean","metric")]%>% pivot_wider(names_from = metric, values_from = mean))
+
+rownames(ct) <- ct$pH
+
+ct <- ct[,-1]
+
+ct_f <- chisq.test(ct)
+ct_f <- tidy(ct_f)
+ct_f$comparison <- "ambient:93 + 8 day recovery-low:72"
+
+
+ct <- rbind(ct_a, ct_b, ct_c, ct_d, ct_e, ct_f)
+
+#perform FDR correction for multiple comparisons
+
+ct$adj.p.value <- p.adjust(ct$p.value)
+
+#reorder columns
+
+ct <- ct[,c("comparison", "statistic", "p.value", "adj.p.value")]
+
+
+ct %>%
+  kbl(caption = "Chi square test: tissue proportions ~ pH") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 ```
 
-filter data for comparing
+
+```{r, eval=F, "plot stacked bar of tissue areas"}
+pd <- position_dodge2(width = 0.2)
+
+ggplot(female_data_STACKED_props, aes(pH,mean, fill = pH,alpha = metric)) + 
+geom_bar(stat = "identity") + 
+geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion tissue area") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank())
+```
+
+
+
+Write out Chi sq. test results
 ```{r}
+write.table(ct,"chisq_tissue_prop.txt",sep = "\t", quote = F, row.names = F)
+```
+
+Generate stacked bars showing average tissue proportions
+```{r}
+
+#export plot with significance denoted
+#plot stacked bar of tissue areas
+
+
+
+#change labels for plotting
+female_data_STACKED_props_labs <- female_data_STACKED_props
+
+female_data_STACKED_props_labs$date <- gsub("20190123", "72",female_data_STACKED_props_labs$date)
+
+female_data_STACKED_props_labs$date <- gsub("20190221", "93 + 8 day recovery",female_data_STACKED_props_labs$date)
+
+female_data_STACKED_props_labs$metric <- gsub("prop_no_tissue","follicle area", female_data_STACKED_props_labs$metric)
+
+female_data_STACKED_props_labs$metric <- gsub("prop_cnx_tissue_indve","connective tissue area", female_data_STACKED_props_labs$metric)
+
+female_data_STACKED_props_labs$metric <- gsub("prop_egg","egg area", female_data_STACKED_props_labs$metric)
+
+#convert metric to ordered factor
+female_data_STACKED_props_labs <- female_data_STACKED_props_labs[order(female_data_STACKED_props_labs$metric),]
+
+female_data_STACKED_props_labs$metric <- factor(female_data_STACKED_props_labs$metric, levels = rev(c(rep("connective tissue area",1), rep("egg area",1), rep("follicle area",1))))
+
+pd <- position_dodge2(width = 0.2)
+
+ggplot(female_data_STACKED_props_labs, aes(pH,mean, fill = pH,alpha = metric)) + 
+geom_bar(stat = "identity") + 
+geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion of total tissue area (%)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank())
+
+
+jpeg("tissue_proportions_stacked_bar.jpg", width = 7, height = 6, units = "in", res = 300)
+ggplot(female_data_STACKED_props_labs, aes(pH,mean, fill = pH,alpha = metric)) + 
+geom_bar(stat = "identity") + 
+geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion of total tissue area (%)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) 
+dev.off()
+
+```
+
+
+
+filter data for comparing
+```{r, eval=F}
 female_data_STACKED_filt <- female_data_STACKED[grep("prop|per|mean", female_data_STACKED$metric),]
 
 ```
 
 Convert character to factors
-```{r}
+```{r, eval = F}
 female_data_STACKED_filt$pH <- as.factor(female_data_STACKED_filt$pH)
 
 female_data_STACKED_filt$date <- as.factor(female_data_STACKED_filt$date)
@@ -111,7 +286,7 @@ female_data_STACKED_filt$metric <- as.factor(female_data_STACKED_filt$metric)
 ```
 
 Plot each metric x treatment group
-```{r}
+```{r, eval = F}
 
 #plot january samples
 #jpeg("20190123_boxplots.jpg", width = 6, height = 6, units = "in", res = 300)
@@ -134,7 +309,7 @@ dev.off()
 ```
 
 clarify pH treatment and dates
-```{r}
+```{r, eval = F}
 female_data_STACKED_filt$pH <- gsub("low", "low (6.8)", female_data_STACKED_filt$pH)
 
 female_data_STACKED_filt$pH <- gsub("ambient", "ambient (7.8)", female_data_STACKED_filt$pH)
@@ -146,7 +321,7 @@ female_data_STACKED_filt$date <- gsub("20190221", "93 + 8 day recovery",female_d
 
 
 plot egg size only 
-```{r}
+```{r, eval = F}
 c <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "mean.egg.size"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste("mean egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"),, axis.text.x = element_text(angle = 45))
 
 d <- ggplot(data = female_data_STACKED_filt[which(female_data_STACKED_filt$metric == "number.of.eggs.per.um2"),],aes(x = date, y = um, color = pH, group = interaction(pH,date))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, position = position_jitterdodge()) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste("number of eggs per ",mu,"m"^2," tissue", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"),, axis.text.x = element_text(angle = 45))
@@ -164,7 +339,7 @@ dev.off()
 
 
 Test for treatment and time effect
-```{r}
+```{r, eval = F}
 ## egg size test---------------------------------
 #egg size normality with shapiro test
 female_data_STACKED_filt %>% tidyr::pivot_wider(names_from = metric,values_from = um ) %>% shapiro_test(mean.egg.size)
@@ -234,7 +409,7 @@ summary(egg_size_jan_pH)
 ```
 
 Run wilcox test to see if follicle area is significantly different
-```{r}
+```{r, eval =F}
 
 wt <- female_data_STACKED_filt %>% group_by(metric) %>% wilcox_test(um ~ pH )
 
@@ -281,24 +456,24 @@ glmt <- female_data_STACKED_filt %>% group_by(metric) %>% do(broom::tidy(glm(um 
 ```
 
 Plot percent follicle area for each tank
-```{r follicle area plot by tank}
+```{r, eval = F, "follicle area plot by tank"}
 ggplot(data = female_data, aes(x = tank,y = perc_follicle_area, group = as.factor(tank), fill = pH)) + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) + geom_jitter(shape =16, position= position_jitter(0.1)) + ylab("follicle area (%)") + theme_bw()
 ```
 
 anova to see if there is a tank or a pH effect
-```{r}
+```{r, eval = F}
 model <- aov(perc_follicle_area ~ pH * tank, data = female_data)
 summary(model)
 ```
 
 
 Plot percent egg area for each treatment group
-```{r egg area plot}
+```{r, eval = F,  "egg area plot"}
 ggplot(data = female_data, aes(x = pH,y = perc_egg_area, group = as.factor(pH), fill = pH)) + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) + geom_jitter(shape =16, position= position_jitter(0.1)) + ylab("egg area (%)") + theme_bw()
 ```
 
 Run wilcox test to see if egg area is significantly different
-```{r}
+```{r, eval = F}
 pH6.8 <- subset(female_data, pH == "6.8", perc_egg_area, drop = TRUE)
 pHamb <- subset(female_data, pH == "amb", perc_egg_area, drop = TRUE)
 wt <- wilcox.test(pH6.8, pHamb)
@@ -306,12 +481,12 @@ print(wt$p.value)
 ```
 
 Plot percent egg area for each tank
-```{r egg area plot by tank}
+```{r, eval =F, "egg area plot by tank"}
 ggplot(data = female_data, aes(x = tank,y = perc_egg_area, group = as.factor(tank), fill = pH)) + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) + geom_jitter(shape =16, position= position_jitter(0.1)) + ylab("egg area (%)") + theme_bw()
 ```
 
 anova to see if there is a tank or a pH effect
-```{r}
+```{r, eval = F}
 model <- aov(perc_egg_area ~ pH * tank, data = female_data)
 summary(model)
 ```
@@ -319,12 +494,12 @@ summary(model)
 
 
 Plot egg:follicle ratio for each treatment group
-```{r egg-follicle ratio plot }
+```{r, eval =F, "egg-follicle ratio plot" }
 ggplot(data = female_data, aes(x = pH,y = follicle_egg_ratio, group = as.factor(pH), fill = pH)) + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) + geom_jitter(shape =16, position= position_jitter(0.1)) + ylab("egg:follicle ratio") + theme_bw()
 ```
 
 Run wilcox test to see if egg:follicle ratio is significantly different
-```{r}
+```{r,eval =F}
 pH6.8 <- subset(female_data, pH == "6.8", follicle_egg_ratio, drop = TRUE)
 pHamb <- subset(female_data, pH == "amb", follicle_egg_ratio, drop = TRUE)
 wt <- wilcox.test(pH6.8, pHamb)
@@ -333,12 +508,12 @@ print(wt$p.value)
 ```
 
 Plot egg:follicle ratio for each tank
-```{r egg:follicle ratio plot by tank}
+```{r, eval =F, "egg:follicle ratio plot by tank"}
 ggplot(data = female_data, aes(x = tank,y = follicle_egg_ratio, group = as.factor(tank), fill = pH)) + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) + geom_jitter(shape =16, position= position_jitter(0.1)) + ylab("egg:follicle ratio") + theme_bw()
 ```
 
 anova to see if there is a tank or a pH effect
-```{r}
+```{r, eval =F}
 model <- aov(follicle_egg_ratio ~ pH * tank, data = female_data)
 summary(model)
 ```

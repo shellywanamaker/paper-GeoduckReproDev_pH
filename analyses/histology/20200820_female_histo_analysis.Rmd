@@ -24,6 +24,8 @@ female_data <- read.csv("../../data/histology/Female_Gonad/20200820_Female_Gonad
 
 
 egg_size <- read.csv("../../data/histology/Female_Gonad/egg_size.csv", stringsAsFactors = F, colClasses = c("character","character","numeric"))
+
+foll_size <- read.csv("../../data/histology/Female_Gonad/follicle_size.csv", stringsAsFactors = F, colClasses = c("character","character","numeric","numeric") )
 ```
 
 format egg size df
@@ -39,15 +41,37 @@ egg_size_m$date <- gsub("20190123", "72",egg_size_m$date)
 egg_size_m$date <- gsub("20190221", "93 + 8 day recovery",egg_size_m$date)
 ```
 
+format follicle size data
+```{r}
+foll_size <- foll_size[,c("Label", "Area")]
+
+foll_size$date <- gsub("-.*","",foll_size$Label)
+
+foll_size$sample_ID <- gsub("-10.*jpg","",foll_size$Label)
+
+foll_size$sample_ID <- gsub(".*-","",foll_size$sample_ID)
+
+foll_size <- foll_size[,c("Area", "sample_ID", "date")]
+
+colnames(foll_size)[1] <- "foll_size"
+
+#merge follicle size data with treatment info
+foll_size_m <- merge(female_data[,c("date", "sample_ID","pH")], foll_size)
+
+foll_size_m$date <- gsub("20190123", "72",foll_size_m$date)
+
+foll_size_m$date <- gsub("20190221", "93 + 8 day recovery",foll_size_m$date)
+
+```
 
 plot egg size 
 ```{r}
 #first check distribution
 
-p <- ggplot(data = egg_size_m,aes(x = egg_size, color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(x = "density", y =expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
+p <- ggplot(data = egg_size_m,aes(x = egg_size, color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(y = "density", x =expression(paste("egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
 
 #it's left skewed so try log transformation
-q <- ggplot(data = egg_size_m,aes(x = log(egg_size,2), color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(x = "density", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
+q <- ggplot(data = egg_size_m,aes(x = log(egg_size,2), color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(y = "density", x = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
 
 #plot boxplots
 r <- ggplot(data = egg_size_m,aes(x = date, y = egg_size, color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
@@ -86,6 +110,40 @@ tidy(TukeyHSD(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))) %>%
 Save 2-way ANOVA results
 ```{r}
 write.table(tidy(TukeyHSD(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))),"2wayAOV_Tuk_egg_size.txt",sep = "\t", quote = F, row.names = F)
+```
+
+plot foll size 
+```{r}
+#first check distribution
+
+p <- ggplot(data = foll_size_m,aes(x = foll_size, color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(y = "density", x =expression(paste("egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
+
+#it's left skewed so try log transformation
+q <- ggplot(data = foll_size_m,aes(x = log(foll_size,2), color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(y = "density", x = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
+
+#plot boxplots
+r <- ggplot(data = foll_size_m,aes(x = date, y = foll_size, color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=1,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," follicle size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+
+#after log transformation
+s <- ggplot(data = foll_size_m,aes(x = date, y = log(foll_size,2), color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=1,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+
+#plot egg size without transformation
+ggpubr::ggarrange(p,r,labels = "AUTO", common.legend = T)
+
+
+#plot eggs size after transformation
+ggpubr::ggarrange(q,s,labels = "AUTO", common.legend = T)
+```
+
+Save plots
+```{r}
+jpeg("foll_size_dist.jpg", width = 12, height = 6, units = "in", res = 300)
+ggpubr::ggarrange(p,r,labels = "AUTO", common.legend = T)
+dev.off()
+
+jpeg("log_foll_size_dist.jpg", width = 12, height = 6, units = "in", res = 300)
+ggpubr::ggarrange(q,s,labels = "AUTO", common.legend = T)
+dev.off()
 ```
 
 

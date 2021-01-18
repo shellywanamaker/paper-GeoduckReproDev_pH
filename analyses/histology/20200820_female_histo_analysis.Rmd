@@ -74,7 +74,9 @@ p <- ggplot(data = egg_size_m,aes(x = egg_size, color = pH, group = sample_ID)) 
 q <- ggplot(data = egg_size_m,aes(x = log(egg_size,2), color = pH, group = sample_ID)) + geom_density() + theme_bw() + labs(y = "density", x = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), axis.text.x = element_text(angle = 45)) + facet_wrap(~date)
 
 #plot boxplots
-r <- ggplot(data = egg_size_m,aes(x = date, y = egg_size, color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
+r <- ggplot(data = egg_size_m,aes(x = date, y = egg_size, color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines")) + scale_color_manual(values = c("#00BFC4", "#F8766D"))
+
+ggplot(data = egg_size_m, aes(x = pH, y = egg_size, color = pH)) + geom_boxplot(aes(group = pH), outlier.shape = NA) + geom_point(aes(group = interaction(pH, sample_ID)),pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + geom_boxplot(outlier.shape = NA, fill = NA)+ theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"), legend.position = "bottom") + scale_color_manual(values = c("#00BFC4", "#F8766D")) + facet_wrap(~date)
 
 #after log transformation
 s <- ggplot(data = egg_size_m,aes(x = date, y = log(egg_size,2), color = pH, group = interaction(pH,date, sample_ID))) + geom_boxplot(outlier.shape = NA) + geom_point(pch = 16, size=0.2,position = position_jitterdodge(jitter.width = 0.05)) + theme_bw() + labs(x = "exposure time (days)", y = expression(paste(log[2]," egg size (",mu,"m"^2,")", sep = "")))+ theme(plot.margin = unit(c(rep(1,4)), "lines"))
@@ -111,6 +113,16 @@ Save 2-way ANOVA results
 ```{r}
 write.table(tidy(TukeyHSD(aov(log(egg_size,2) ~ pH * date, data = egg_size_m))),"2wayAOV_Tuk_egg_size.txt",sep = "\t", quote = F, row.names = F)
 ```
+
+
+Egg size mixed model stats
+```{r}
+anova(lme(log(egg_size,2) ~ pH * date, random = ~1|sample_ID, data = egg_size_m)) %>%
+  kbl(caption = "linear mixed model: log2 egg size ~ pH * time, random = sample_ID") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
 
 plot foll size 
 ```{r}
@@ -270,9 +282,9 @@ ct %>%
 ```{r, eval=F, "plot stacked bar of tissue areas"}
 pd <- position_dodge2(width = 0.2)
 
-ggplot(female_data_STACKED_props, aes(pH,mean, fill = pH,alpha = metric)) + 
-geom_bar(stat = "identity") + 
-geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion tissue area") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank())
+ggplot(female_data_STACKED_props, aes(pH,mean,fill = pH,alpha = metric)) + 
+geom_bar(stat = "identity", color = "black") + 
+geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion tissue area") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) + scale_fill_manual(values = c("#00BFC4","#F8766D")) 
 ```
 
 
@@ -293,9 +305,9 @@ Generate stacked bars showing average tissue proportions
 #change labels for plotting
 female_data_STACKED_props_labs <- female_data_STACKED_props
 
-female_data_STACKED_props_labs$date <- gsub("20190123", "72",female_data_STACKED_props_labs$date)
+female_data_STACKED_props_labs$date <- gsub("20190123", "72 days of exposure",female_data_STACKED_props_labs$date)
 
-female_data_STACKED_props_labs$date <- gsub("20190221", "93 + 8 day recovery",female_data_STACKED_props_labs$date)
+female_data_STACKED_props_labs$date <- gsub("20190221", "93 days of exposure \n + 8 day recovery",female_data_STACKED_props_labs$date)
 
 female_data_STACKED_props_labs$metric <- gsub("prop_no_tissue","follicle area", female_data_STACKED_props_labs$metric)
 
@@ -311,14 +323,14 @@ female_data_STACKED_props_labs$metric <- factor(female_data_STACKED_props_labs$m
 pd <- position_dodge2(width = 0.2)
 
 ggplot(female_data_STACKED_props_labs, aes(pH,mean, fill = pH,alpha = metric)) + 
-geom_bar(stat = "identity") + 
-geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion of total tissue area (%)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank())
+geom_bar(stat = "identity", color = "black") + 
+geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion of total tissue area (%)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) + scale_fill_manual(values = c("#00BFC4","#F8766D"))
 
 
 jpeg("tissue_proportions_stacked_bar.jpg", width = 7, height = 6, units = "in", res = 300)
 ggplot(female_data_STACKED_props_labs, aes(pH,mean, fill = pH,alpha = metric)) + 
-geom_bar(stat = "identity") + 
-geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion of total tissue area (%)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) 
+geom_bar(stat = "identity", color = "black") + 
+geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("percent of total tissue area (mean ± s.d.)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) + scale_fill_manual(values = c("#00BFC4", "#F8766D"))
 dev.off()
 
 ```

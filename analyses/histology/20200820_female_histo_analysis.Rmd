@@ -333,6 +333,13 @@ geom_bar(stat = "identity", color = "black") +
 geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("percent of total tissue area (mean ± s.d.)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) + scale_fill_manual(values = c("#00BFC4", "#F8766D")) + ggtitle("Female quantitative histology scoring")
 dev.off()
 
+
+pdf("tissue_proportions_stacked_bar.pdf", width = 7, height = 6)
+ggplot(female_data_STACKED_props_labs, aes(pH,mean, fill = pH,alpha = metric)) + 
+geom_bar(stat = "identity", color = "black") + 
+geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("percent of total tissue area (mean ± s.d.)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) + scale_fill_manual(values = c("#00BFC4", "#F8766D")) + ggtitle("Female quantitative histology scoring")
+dev.off()
+
 ```
 
 

@@ -1,0 +1,312 @@
+---
+title: "Ca Assay Analysis"
+author: "Shelly Trigg"
+date: "12/7/2020"
+output: github_document 
+---
+
+load libraries
+```{r}
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggpubr)
+```
+
+load data
+```{r}
+ca_data <- read_xlsx("../../data/hemolymph_calcium_assay/20201125/CompiledData.xlsx")
+
+sample_info <- read_xlsx("../../data/hemolymph_calcium_assay/20201125/CompiledData.xlsx", sheet = 'SampleInfo' )
+
+histology_data <- read_xlsx("../../data/histology/HistologyScores_STRIGG.xlsx")
+```
+
+
+calculate the avg abs for each standard
+```{r}
+ca_data_sum <- ca_data %>% group_by(Plate, ID) %>% summarise(mean_abs = mean(`Absorbance @ 570 (1.0s) (A)`))
+
+```
+
+calculate the corrected absorbance by subtracting STD_A from all measurements
+```{r}
+ca_data_sum_corrected <- ca_data_sum %>% group_by(Plate) %>% mutate(correct_abs = mean_abs - mean_abs[which(ID == "STD_A")])
+
+```
+
+add column with std concentrations
+```{r}
+ca_data_sum_corrected$conc <- NA
+
+for (i in 1:nrow(ca_data_sum_corrected)){
+  if(ca_data_sum_corrected$ID[i]=="STD_A"){
+    ca_data_sum_corrected$conc[i] <- 0
+  }
+  if(ca_data_sum_corrected$ID[i]=="STD_B"){
+    ca_data_sum_corrected$conc[i] <- 0.5
+  }
+  if(ca_data_sum_corrected$ID[i]=="STD_C"){
+    ca_data_sum_corrected$conc[i] <- 1
+  }
+  if(ca_data_sum_corrected$ID[i]=="STD_D"){
+    ca_data_sum_corrected$conc[i] <- 2
+  }
+  if(ca_data_sum_corrected$ID[i]=="STD_E"){
+    ca_data_sum_corrected$conc[i] <- 4
+  }
+  if(ca_data_sum_corrected$ID[i]=="STD_F"){
+    ca_data_sum_corrected$conc[i] <- 6
+  }
+  if(ca_data_sum_corrected$ID[i]=="STD_G"){
+    ca_data_sum_corrected$conc[i] <- 8
+  }
+  if(ca_data_sum_corrected$ID[i]=="STD_H"){
+    ca_data_sum_corrected$conc[i] <- 10
+  }
+}
+
+```
+
+plot corrected STD abs
+```{r}
+
+ggplot(ca_data_sum_corrected[grep("STD",ca_data_sum_corrected$ID),], aes(conc,correct_abs)) + geom_point() + facet_wrap(~Plate)
+```
+
+run linear models to calculate the slope and intercept
+```{r}
+
+#plate 1
+summary(lm(conc ~ correct_abs, data = ca_data_sum_corrected[which(ca_data_sum_corrected$Plate ==1 & substr(ca_data_sum_corrected$ID,1,3) == "STD"),]))
+
+#plate 2
+summary(lm(conc ~ correct_abs, data = ca_data_sum_corrected[which(ca_data_sum_corrected$Plate ==2 & substr(ca_data_sum_corrected$ID,1,3) == "STD"),]))
+
+#plate 3
+summary(lm(conc ~ correct_abs, data = ca_data_sum_corrected[which(ca_data_sum_corrected$Plate ==3 & substr(ca_data_sum_corrected$ID,1,3) == "STD"),]))
+
+#plate 4
+summary(lm(conc ~ correct_abs, data = ca_data_sum_corrected[which(ca_data_sum_corrected$Plate ==4 & substr(ca_data_sum_corrected$ID,1,3) == "STD"),]))
+
+
+# I also did this in excel and I get different values (see below); since I trust excel more than this lm, I'm going with the excel values
+
+#excel slope and intercept values
+# plate 1:
+  # slope: 0.0999
+  # intercept: -0.0064
+
+#plate 2: 
+  # slope: 0.1067
+  # intercept: -0.0057
+
+#plate 3: 
+  # slope: 0.1057
+  # intercept: -0.0038
+
+#plate 4:
+  # slope: 0.1051
+  # intercept: -0.0002
+```
+
+calculate calcium concentration from slope
+```{r}
+
+# conc. = (corrected sample abs - y intercept / slope) * sample dilution
+for (i in 1:nrow(ca_data_sum_corrected)){
+  if(substr(ca_data_sum_corrected$ID[i],1,3)!="STD" & ca_data_sum_corrected$Plate[i] == 1){
+    ca_data_sum_corrected$conc[i] <- ((ca_data_sum_corrected$correct_abs[i] + 0.0064) / 0.0999) * 4
+  }
+  if(substr(ca_data_sum_corrected$ID[i],1,3)!="STD" & ca_data_sum_corrected$Plate[i] == 2){
+    ca_data_sum_corrected$conc[i] <- ((ca_data_sum_corrected$correct_abs[i] + 0.0057) / 0.1067) * 4
+  }
+  if(substr(ca_data_sum_corrected$ID[i],1,3)!="STD" & ca_data_sum_corrected$Plate[i] == 3){
+    ca_data_sum_corrected$conc[i] <- ((ca_data_sum_corrected$correct_abs[i] + 0.0038) / 0.1057) * 4
+  }
+  if(substr(ca_data_sum_corrected$ID[i],1,3)!="STD" & ca_data_sum_corrected$Plate[i] == 4){
+    ca_data_sum_corrected$conc[i] <- ((ca_data_sum_corrected$correct_abs[i] + 0.0002) / 0.1051) * 4
+  }
+}
+
+#correct conc for ID 01/23-037L which was a 1:7 dilution (5uL in 35uL total)
+ca_data_sum_corrected[which(ca_data_sum_corrected$ID == "01/23-037L"),"conc"] <- (data.frame((ca_data_sum_corrected[which(ca_data_sum_corrected$ID == "01/23-037L"),"correct_abs"]) + 0.0064) / 0.0999) * 7
+
+```
+
+match up with treatment and time info
+```{r}
+#first check ID is the exact same as the label
+head(sample_info[which(sample_info$ID!= sample_info$Label),])
+
+#now create ID column to match with plate reader data
+sample_info$ID <- paste0(substr(sample_info$Date,5,6),"/",substr(sample_info$Date,7,8),"-",sample_info$Label)
+
+
+
+#merge sample info with plate reader data
+ca_data_sum_corrected_info <- merge(ca_data_sum_corrected, sample_info, by = "ID")
+
+
+#create a column with the number of sampling points called "freq"
+ca_data_sum_corrected_info <- merge(ca_data_sum_corrected_info,table(Label = ca_data_sum_corrected_info$Label), by =  "Label")
+
+#create a column with factors to use for labeling individuals with multiple sampling points
+
+ca_data_sum_corrected_info$name <- factor(ifelse(ca_data_sum_corrected_info$Freq !=1,paste0(ca_data_sum_corrected_info$Label,"_",ca_data_sum_corrected_info$Freq),1))
+
+```
+
+plot
+
+```{r}
+ggplot(ca_data_sum_corrected_info, aes(x = factor(Date), y = conc, group = interaction(Treatment,factor(Date)),color = Treatment)) + geom_boxplot(outlier.shape = NA) + geom_point(shape = ca_data_sum_corrected_info$name,size=1,position = position_jitterdodge(jitter.width = 0.2)) + theme_bw() + labs(x = "Date", y = "Calcium conc. (mg/dL)") + scale_shape_manual(values=1:nlevels(ca_data_sum_corrected_info$name))  + scale_color_manual(values = c("gray50", "chocolate"))
+
+```
+
+run aov
+
+
+```{r}
+aov_data <- aov(conc ~ Treatment * Date, data = ca_data_sum_corrected_info)
+summary(aov_data)
+
+```
+
+Plot data but separate females from males
+```{r}
+ggplot(ca_data_sum_corrected_info, aes(x = factor(Date), y = conc, group = interaction(Sex,Treatment,factor(Date)),color = Treatment, fill = Sex)) + geom_boxplot(outlier.shape = NA) + geom_point(shape = ca_data_sum_corrected_info$name,size=1,position = position_jitterdodge(jitter.width = 0.1)) + theme_bw() + labs(x = "Date", y = "Calcium conc. (mg/dL)") + scale_shape_manual(values=1:nlevels(ca_data_sum_corrected_info$name)) + scale_color_manual(values = c("gray50", "chocolate")) + scale_fill_manual(values = c("wheat1","lightblue1"))
+
+```
+
+Convert date to days
+```{r}
+#create a column for days to go into 
+ca_data_sum_corrected_info$days <- NA
+
+
+for(i in 1:nrow(ca_data_sum_corrected_info)){
+  if(ca_data_sum_corrected_info$Date[i] == "20181119"){
+    ca_data_sum_corrected_info$days[i] <- "7"
+  }
+  if(ca_data_sum_corrected_info$Date[i] == "20190104"){
+    ca_data_sum_corrected_info$days[i] <- "53"
+  }
+  if(ca_data_sum_corrected_info$Date[i] == "20190123"){
+    ca_data_sum_corrected_info$days[i] <- "72"
+  }
+  if(ca_data_sum_corrected_info$Date[i] == "20190221"){
+    ca_data_sum_corrected_info$days[i] <- "93 + 8 day recovery"
+  }
+}
+
+ca_data_sum_corrected_info$days <- factor(ca_data_sum_corrected_info$days, levels = c("7", "53", "72", "93 + 8 day recovery"))
+
+count_summary <- ca_data_sum_corrected_info %>% group_by(Sex,days) %>% count()
+
+ca_data_sum_corrected_info$Treatment <- gsub("Elevated","low (6.8)",ca_data_sum_corrected_info$Treatment)
+ca_data_sum_corrected_info$Treatment <- gsub("Ambient","ambient (7.8)",ca_data_sum_corrected_info$Treatment)
+
+```
+
+
+Separate plots for males and females
+```{r}
+
+#ggplot(ca_data_sum_corrected_info, aes(x = days, y = conc, group = interaction(Sex,Treatment,days),fill = Treatment)) + geom_boxplot(outlier.shape = NA) + geom_point(size=1,shape = 1,position = position_jitterdodge(jitter.width = 0.1)) +  theme_bw() + theme(axis.text.x = element_text(angle=90,hjust=0.95,vjust=0.2))  + labs(x = "Days", y = "Calcium conc. (mg/dL)") + facet_wrap(~Sex) 
+
+
+
+#define regression line coefficients for female data
+coefs_a <- coef(lm(conc ~ days, data = ca_data_sum_corrected_info[which(ca_data_sum_corrected_info$Treatment == "ambient (7.8)" & ca_data_sum_corrected_info$Sex == "F"),]))
+
+coefs_l <- coef(lm(conc ~ days, data = ca_data_sum_corrected_info[which(ca_data_sum_corrected_info$Treatment == "low (6.8)" & ca_data_sum_corrected_info$Sex == "F"),]))
+
+#define regression line coefficients for male data
+coefs_am <- coef(lm(conc ~ days, data = ca_data_sum_corrected_info[which(ca_data_sum_corrected_info$Treatment == "ambient (7.8)" & ca_data_sum_corrected_info$Sex == "M"),]))
+
+coefs_lm <- coef(lm(conc ~ days, data = ca_data_sum_corrected_info[which(ca_data_sum_corrected_info$Treatment == "low (6.8)" & ca_data_sum_corrected_info$Sex == "M"),]))
+
+#plot female data
+f <- ggplot(ca_data_sum_corrected_info[which(ca_data_sum_corrected_info$Sex == "F"),], aes(x = days, y = conc, group = interaction(Treatment,days),color = Treatment)) + geom_boxplot(outlier.shape = NA) + geom_point(size=1,shape = 1,position = position_jitterdodge(jitter.width = 0.1)) +  theme_bw() + theme(axis.text.x = element_text(angle=90,hjust=0.95,vjust=0.2))  + labs(x = "Days", y = "Calcium conc. (mg/dL)") + scale_color_manual(values = c("#00BFC4", "#F8766D")) + geom_abline(intercept = coefs_a[1], slope = coefs_a[2], col = "#00BFC4") + geom_abline(intercept = coefs_l[1], slope = coefs_l[2], col = "#F8766D") + ggtitle("female")
+
+#plot male data
+m <- ggplot(ca_data_sum_corrected_info[which(ca_data_sum_corrected_info$Sex == "M"),], aes(x = days, y = conc, group = interaction(Treatment,days),color = Treatment)) + geom_boxplot(outlier.shape = NA) + geom_point(size=1,shape = 1,position = position_jitterdodge(jitter.width = 0.1)) +  theme_bw() + theme(axis.text.x = element_text(angle=90,hjust=0.95,vjust=0.2))  + labs(x = "Days", y = "Calcium conc. (mg/dL)") + scale_color_manual(values = c("#00BFC4", "#F8766D")) + geom_abline(intercept = coefs_am[1], slope = coefs_am[2], col = "#00BFC4") + geom_abline(intercept = coefs_lm[1], slope = coefs_lm[2], col = "#F8766D") + ggtitle("male")
+
+
+jpeg("img/CalciumXtime.jpg", width = 7, height = 4, units = "in", res = 300)
+ggarrange(f,m, common.legend = T)
+dev.off()
+```
+
+run aov for female data
+```{r}
+f_aov_data <- aov(conc ~ Treatment * days, data = ca_data_sum_corrected_info[which(ca_data_sum_corrected_info$Sex == "F"),])
+summary(f_aov_data)
+
+```
+
+run aov for male data
+```{r}
+m_aov_data <- aov(conc ~ Treatment * days, data = ca_data_sum_corrected_info[which(ca_data_sum_corrected_info$Sex == "M"),])
+summary(m_aov_data)
+
+```
+
+
+add staging data
+```{r}
+#create column for Geoduck.ID
+ca_data_sum_corrected_info$Geoduck.ID <- gsub("L", "", ca_data_sum_corrected_info$Label)
+
+ca_data_sum_corrected_info_stage <- merge(ca_data_sum_corrected_info,histology_data[,c("Geoduck.ID", "Stage_Trigg")], by = "Geoduck.ID")
+
+
+ca_data_sum_corrected_info_stage$Treatment <- gsub("Elevated", "low (6.8)", ca_data_sum_corrected_info_stage$Treatment)
+
+ca_data_sum_corrected_info_stage$Treatment <- gsub("Ambient", "ambient (7.8)", ca_data_sum_corrected_info_stage$Treatment)
+
+ca_data_sum_corrected_info_stage$Sex <- gsub("F", "Female", ca_data_sum_corrected_info_stage$Sex)
+ca_data_sum_corrected_info_stage$Sex <- gsub("M", "Male", ca_data_sum_corrected_info_stage$Sex)
+
+#remove animal with NA stage
+ca_data_sum_corrected_info_stage <- ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Stage_Trigg != "NA"),]
+
+#define regression line coefficients for female data
+coefs_a <- coef(lm(conc ~ Stage_Trigg, data = ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Treatment == "ambient (7.8)" & ca_data_sum_corrected_info_stage$Sex == "Female"),]))
+
+coefs_l <- coef(lm(conc ~ Stage_Trigg, data = ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Treatment == "low (6.8)" & ca_data_sum_corrected_info_stage$Sex == "Female"),]))
+
+r_a <- summary(lm(conc ~ Stage_Trigg, data = ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Treatment == "ambient (7.8)" & ca_data_sum_corrected_info_stage$Sex == "Female"),]))$r.squared 
+
+r_l <- summary(lm(conc ~ Stage_Trigg, data = ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Treatment == "low (6.8)" & ca_data_sum_corrected_info_stage$Sex == "Female"),]))$r.squared 
+
+
+
+
+#define regression line coefficients for male data
+coefs_am <- coef(lm(conc ~ Stage_Trigg, data = ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Treatment == "ambient (7.8)" & ca_data_sum_corrected_info_stage$Sex == "Male"),]))
+
+r_am <- round(summary(lm(conc ~ Stage_Trigg, data = ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Treatment == "ambient (7.8)" & ca_data_sum_corrected_info_stage$Sex == "Male"),]))$r.squared, digits = 3) 
+
+coefs_lm <- coef(lm(conc ~ Stage_Trigg, data = ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Treatment == "low (6.8)" & ca_data_sum_corrected_info_stage$Sex == "Male"),]))
+
+r_lm <- round(summary(lm(conc ~ Stage_Trigg, data = ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Treatment == "low (6.8)" & ca_data_sum_corrected_info_stage$Sex == "Male"),]))$r.squared, digits = 3)
+
+
+
+ca_data_sum_corrected_info_stage_m <- ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Sex =="Male"),]
+
+ca_data_sum_corrected_info_stage_f <- ca_data_sum_corrected_info_stage[which(ca_data_sum_corrected_info_stage$Sex =="Female"),]
+
+
+f <- ggplot(ca_data_sum_corrected_info_stage_f[which(ca_data_sum_corrected_info_stage_f$Date == "20190123" |ca_data_sum_corrected_info_stage_f$Date == "20190221"  ),], aes(x = Stage_Trigg, y = conc, group = interaction(Sex,Treatment,Stage_Trigg),color = Treatment)) +  geom_point(position = position_dodge(width = 0.2),size=1.5, aes(shape = factor(Date))) +  theme_bw() + theme(axis.text.x = element_text(angle=90,hjust=0.95,vjust=0.2))  + labs(x = "Stage (based on histology)", y = "Calcium conc. (mg/dL)", shape = "Date", color = "pH")+ scale_color_manual(values = c("#00BFC4", "#F8766D")) + geom_abline(intercept = coefs_a[1], slope = coefs_a[2], col = "#00BFC4") + geom_abline(intercept = coefs_l[1], slope = coefs_l[2], col = "#F8766D") + ggtitle("female")
+
+m <- ggplot(ca_data_sum_corrected_info_stage_m[which(ca_data_sum_corrected_info_stage_m$Date == "20190123" |ca_data_sum_corrected_info_stage_m$Date == "20190221"  ),], aes(x = Stage_Trigg, y = conc, group = interaction(Sex,Treatment,Stage_Trigg),color = Treatment)) +  geom_point(position = position_dodge(width = 0.2),size=1.5, aes(shape = factor(Date))) +  theme_bw() + theme(axis.text.x = element_text(angle=90,hjust=0.95,vjust=0.2))  + labs(x = "Stage (based on histology)", y = "Calcium conc. (mg/dL)", shape = "Date", color = "pH") + scale_color_manual(values = c("#00BFC4", "#F8766D")) + geom_abline(intercept = coefs_am[1], slope = coefs_am[2], col = "#00BFC4") + geom_abline(intercept = coefs_lm[1], slope = coefs_lm[2], col = "#F8766D") + ggtitle("male") + geom_text(x = 1, y = 40, label = paste0(expression(italic(r)^2)," = ",r_am),color ="#00BFC4" , parse = TRUE) + geom_text(x = 1, y = 38, label = paste(expression(italic(r)^2),"=",r_lm),color ="#F8766D")
+
+jpeg("img/CalciumXstage.jpg", width = 7, height = 4, units = "in", res = 300)
+ggarrange(f,m, common.legend = T)
+dev.off()
+
+```

@@ -46,7 +46,7 @@ surv <- Surv(time = surv_data$day, event = surv_data$dead, type = "right")
 
 ```{r}
 jpeg("surv_plot.jpg", width = 6, height = 4, units = "in", res = 300)
-ggsurvplot(survfit(surv ~ pCO2, surv_data), risk.table = FALSE, pval = FALSE, conf.int = TRUE, palette = alpha(c("#00BFC4", "#F8766D"),c(0.7,0.5)), break.x.by = 10, xlim = c(1,93) , xlab = "Time (days)", legend.title = "treatment", legend.labs = c("ambient pCO2 (839 uatm)", "high pCO2 (5430 uatm)"))
+ggsurvplot(survfit(surv ~ pCO2, surv_data), risk.table = FALSE, pval = FALSE, conf.int = TRUE, palette = alpha(c("#00BFC4", "#F8766D"),c(0.7,0.5)), break.x.by = 10 ,xlab = "days", legend.title = "treatment", legend.labs = c("ambient pCO2 (839 uatm)", "high pCO2 (5430 uatm)"))
 dev.off()
 ```
 run cox propotional hazard test
@@ -59,7 +59,7 @@ include tank as a random effect
 ```{r}
 survFitME <- coxme(surv ~ factor(pH) + (1|tank), surv_data)
 summary(survFitME)
-#The standard deviation of the tank random effect is very small (0.02) which suggests that tank does not really affect the outcome. Also the liklihood ratio test (Chisq) value is the same (15.4), meaning that including tank as a random effect does not improve the model. We likely do not need to include it as a random effect. 
+#The standard deviation of the tank random effect is very small (0.02) which suggests that tank does not really affect the outcome. Also the liklihood ratio test (Chi?sq) value is the same (15.4), meaning that including tank as a random effect does not improve the model. We likely do not need to include it as a random effect. 
 ```
 
 calculate coefficient of determination (r^2)

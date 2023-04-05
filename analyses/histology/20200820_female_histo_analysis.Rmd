@@ -278,6 +278,41 @@ ct %>%
   kable_classic(full_width = F, html_font = "Cambria")
 ```
 
+try AOV
+```{r}
+input_data <- female_data_STACKED[grep("prop", female_data_STACKED$metric),]%>%group_by(date, pH,metric)
+
+
+#arcsin transform percentage data
+asinTransform <- function(p) { asin(sqrt(p))}
+
+input_data$t_um <- asinTransform(input_data$um/100)
+
+#is data normal?
+ggplot(input_data[which(input_data$metric == "prop_egg"),]) + geom_density(aes(x = t_um, color = pH))
+
+ggqqplot(as.numeric(unlist(input_data[which(input_data$metric == "prop_egg"),"t_um"])))
+
+shapiro.test(x = as.numeric(unlist(input_data[which(input_data$metric == "prop_egg"),"t_um"])))
+
+
+ggplot(input_data[which(input_data$metric == "prop_cnx_tissue_indve"),]) + geom_density(aes(x = t_um, color = pH))
+
+ggqqplot(as.numeric(unlist(input_data[which(input_data$metric == "prop_cnx_tissue_indve"),"t_um"])))
+
+shapiro.test(x = as.numeric(unlist(input_data[which(input_data$metric == "prop_cnx_tissue_indve"),"t_um"])))
+
+aov_egg <- aov(t_um ~ pH * date, data = input_data[which(input_data$metric == "prop_egg"),])
+summary(aov_egg)
+
+aov_egg <- aov(t_um ~ pH, data = input_data[which(input_data$metric == "prop_egg" & input_data$date == "20190123"),])
+summary(aov_egg)
+
+aov_cnx <- aov(t_um ~ pH, data = input_data[which(input_data$metric == "prop_cnx_tissue_indve" & input_data$date == "20190123"),])
+summary(aov_cnx)
+
+```
+
 
 ```{r, eval=F, "plot stacked bar of tissue areas"}
 pd <- position_dodge2(width = 0.2)

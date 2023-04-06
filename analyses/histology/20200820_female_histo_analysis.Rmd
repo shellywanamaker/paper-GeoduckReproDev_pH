@@ -4,6 +4,8 @@ author: "Shelly Trigg"
 date: "10/07/2020"
 output: html_document
 tags: geoduck pH reproductive development histology
+editor_options: 
+  chunk_output_type: console
 ---
 
 Load libraries
@@ -315,9 +317,9 @@ summary(aov_cnx)
 
 
 ```{r, eval=F, "plot stacked bar of tissue areas"}
-pd <- position_dodge2(width = 0.2)
+pd <- position_dodge2(width = 0.6)
 
-ggplot(female_data_STACKED_props, aes(pH,mean,fill = pH,alpha = metric)) + 
+ggplot(female_data_STACKED_props, aes(pH,mean,fill = metric)) + 
 geom_bar(stat = "identity", color = "black") + 
 geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("mean proportion tissue area") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) + scale_fill_manual(values = c("#00BFC4","#F8766D")) 
 ```

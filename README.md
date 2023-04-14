@@ -7,7 +7,7 @@ Manuscript repo for geoduck broodstock constant low pH conditioning effect on re
 
 - [Overview](#overview)
 - [Repo Contents](#repo-contents)
-- [Issues](https://github.com/shellytrigg/paper-GeoduckReproDev_pH/issues)
+- [Issues](https://github.com/shellywanamaker/paper-GeoduckReproDev_pH/issues)
 - [Citation](#citation)
 
 ## Overview

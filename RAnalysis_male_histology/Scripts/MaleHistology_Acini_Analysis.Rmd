@@ -18,7 +18,7 @@ library(gridExtra)
 
 # set wd and Load data
 ```{r}
-setwd("C:/Users/samjg/Documents/Github_Repositories/Pgenerosa_histology/RAnalysis/Data") #set working
+setwd("C:/Users/samjg/Documents/Github_Repositories/paper-GeoduckReproDev_pH/RAnalysis_male_histology/Data") #set working
 staging<-read.csv("Staging/Hist_Staging_Kaitlyn.csv", header=T, sep=",", na.string="NA", as.is=T) 
 Male_hist<-read.csv("Master_summary_male_acini.csv", header=T, sep=",", na.string="NA", as.is=T) 
 head(staging)
@@ -67,9 +67,9 @@ head(Male_hist_2)
 # Average proprotions (persenct area) of each feature 
 ```{r}
 Mean_Proportion_Table <- Male_hist_2 %>% 
-  dplyr::select(c('Date', 'Treatment', 'perc_zoa','perc_cytes', 'perc_lumen')) %>% 
+  dplyr::select(c('Date', 'perc_zoa','perc_cytes', 'perc_lumen')) %>% 
   na.omit() %>%
-  dplyr::group_by(Date, Treatment) %>% 
+  dplyr::group_by(Date) %>% 
   summarise_each(funs(mean,sd,se=sd(.)/sqrt(n())))
 # Date      Treat   zoaMEAN    zoaSTE   perc_cytes_se
 # 20190123	Ambient	8.995023   1.503110
@@ -80,46 +80,59 @@ Mean_Proportion_Table <- Male_hist_2 %>%
 
 
 #   TWO WAY ANOVAs (proprtion.hist.trait ~ treatment ? date)
-```{r}
-Male_hist_2$Date <- as.character(Male_hist_2$Date) # make Date a character variable!
+```{r, mean percent SPERMATOZOA}
+Mean_Proportion_Table$Date <- as.character(Mean_Proportion_Table$Date) # make Date a character variable!
 # PERC ZOA TEST
-PERCZoa_2factorialAOV <- aov(perc_zoa ~ Treatment * Date, data = Male_hist_2)
-summary(PERCZoa_2factorialAOV) # date is a sig effect in raw data (not transformed!)
-TukeyHSD(PERCZoa_2factorialAOV, which = "Date") # 02/21 > 01/23; increased with time
-plot(PERCZoa_2factorialAOV, 1) # TEST ASSUMPTIONS     # 1. Homogeneity of variances (Levenes test) of the model data
-leveneTest(perc_zoa ~ Treatment * Date, data = Male_hist_2) # PASSES
-plot(PERCZoa_2factorialAOV, 2)  # TEST ASSUMPTIONS    # 2. Normality - QQ plot (quantile quantile) of the model residuals
+PERCZoa_2factorialAOV <- aov(perc_zoa_mean ~ Treatment * Date, data = Mean_Proportion_Table)
+leveneTest(perc_zoa_mean ~ Treatment * Date, data = Mean_Proportion_Table) # 0.3723 PASS
 PERCZoa_aov_residuals <- residuals(object = PERCZoa_2factorialAOV) # Extract the residuals
-shapiro.test(x = PERCZoa_aov_residuals) # Run Shapiro-Wilk test; NOT NORMAL
-hist(Male_hist_2$perc_zoa)
-dev.off()
-```
-```{r}
-# PERC LUMEN 
-PERClumen_2factorialAOV <- aov(perc_lumen ~ Treatment * Date, data = Male_hist_2)
-summary(PERClumen_2factorialAOV) # treatment and data are sig diff in raw data (not transformed!)
-TukeyHSD(PERClumen_2factorialAOV, which = "Date") 
-plot(PERClumen_2factorialAOV, 1) # TEST ASSUMPTIONS     # 1. Homogeneity of variances (Levenes test) of the model data
-leveneTest(perc_lumen ~ Treatment * Date, data = Male_hist_2) # PASSES
-plot(PERClumen_2factorialAOV, 2)  # TEST ASSUMPTIONS    # 2. Normality - QQ plot (quantile quantile) of the model residuals
-PERClumen_aov_residuals <- residuals(object = PERClumen_2factorialAOV) # Extract the residuals
-shapiro.test(x = PERClumen_aov_residuals) # Run Shapiro-Wilk test; NOT NORMAL
-hist(Male_hist_2$perc_lumen)
-dev.off()
+shapiro.test(x = PERCZoa_aov_residuals) # Run Shapiro-Wilk test;  NORMAL 0.4989
+plot(PERCZoa_2factorialAOV, 2)  # TEST ASSUMPTIONS    # 2. Normality - QQ plot (quantile quantile) of the model residuals
+summary(PERCZoa_2factorialAOV) # date is a sig effect in raw data (not transformed!)
+#                 Df Sum Sq Mean Sq F value Pr(>F)  
+# Treatment       1   16.2    16.2   0.248  0.624  
+# Date            1  429.9   429.9   6.573  0.019 *
+# Treatment:Date  1   34.7    34.7   0.531  0.475  
+# Residuals      19 1242.6    65.4
+TukeyHSD(PERCZoa_2factorialAOV, which = "Date") # 20190221-20190123 8.453121 - later date has 8.4 % more zoa
+
+
 ```
 
-```{r}
-# PERC CYTES 
-PERCcytes_2factorialAOV <- aov(perc_cytes ~ Treatment * Date, data = Male_hist_2)
-summary(PERCcytes_2factorialAOV) # Date has a marginal diff (not transformed!)
-TukeyHSD(PERCcytes_2factorialAOV, which = "Date") # 02/21 > 01/23; increased with time
-plot(PERCcytes_2factorialAOV, 1) # TEST ASSUMPTIONS     # 1. Homogeneity of variances (Levenes test) of the model data
-leveneTest(perc_cytes ~ Treatment * Date, data = Male_hist_2) # PASSED homogeneity of variance
-plot(PERCcytes_2factorialAOV, 2)  # TEST ASSUMPTIONS    # 2. Normality - QQ plot (quantile quantile) of the model residuals
-PERCcytes_aov_residuals <- residuals(object = PERCcytes_2factorialAOV) # Extract the residuals
-shapiro.test(x = PERCcytes_aov_residuals) # Run Shapiro-Wilk test;  NORMAL
-dev.off()
+```{r, mean percent LUMEN}
+Mean_Proportion_Table$Date <- as.character(Mean_Proportion_Table$Date) # make Date a character variable!
+# PERC lumen TEST
+PERClumen_2factorialAOV <- aov(perc_lumen_mean ~ Treatment * Date, data = Mean_Proportion_Table)
+leveneTest(perc_lumen_mean ~ Treatment * Date, data = Mean_Proportion_Table) # 0.429 PASS
+PERClumen_aov_residuals <- residuals(object = PERClumen_2factorialAOV) # Extract the residuals
+shapiro.test(x = PERClumen_aov_residuals) # Run Shapiro-Wilk test;  NORMAL 0.1294
+plot(PERClumen_2factorialAOV, 2)  # TEST ASSUMPTIONS    # 2. Normality - QQ plot (quantile quantile) of the model residuals
+summary(PERClumen_2factorialAOV) # date is a sig effect in raw data (not transformed!)
+#                Df Sum Sq Mean Sq F value Pr(>F)
+# Treatment       1   15.5   15.46   0.859  0.366
+# Date            1   18.2   18.21   1.011  0.327
+# Treatment:Date  1   13.5   13.52   0.751  0.397
+# Residuals      19  342.1   18.01 
 ```
+
+
+
+```{r, mean percent SPERMATOCYTES}
+Mean_Proportion_Table$Date <- as.character(Mean_Proportion_Table$Date) # make Date a character variable!
+# PERC cytes TEST
+PERCcytes_2factorialAOV <- aov(perc_cytes_mean ~ Treatment * Date, data = Mean_Proportion_Table)
+leveneTest(perc_cytes_mean ~ Treatment * Date, data = Mean_Proportion_Table) # 0.5442 PASS
+PERCcytes_aov_residuals <- residuals(object = PERCcytes_2factorialAOV) # Extract the residuals
+shapiro.test(x = PERCcytes_aov_residuals) # Run Shapiro-Wilk test;  NORMAL 0.2247
+plot(PERCcytes_2factorialAOV, 2)  # TEST ASSUMPTIONS    # 2. Normality - QQ plot (quantile quantile) of the model residuals
+summary(PERCcytes_2factorialAOV) # date is a sig effect in raw data (not transformed!)
+#                Df Sum Sq Mean Sq F value Pr(>F)
+# Treatment       1   23.7   23.71   0.255  0.619
+# Date            1  116.6  116.59   1.253  0.277
+# Treatment:Date  1   84.6   84.63   0.910  0.352
+# Residuals      19 1767.5   93.02 
+```
+
 
 # BOXPLOTS RAW AREA DATA
 

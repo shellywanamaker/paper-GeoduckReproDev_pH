@@ -379,6 +379,61 @@ h <- quant_qual_long %>% filter(metric == "mean.egg.size") %>% filter(scorer == 
 
 ggarrange(g,h, ncol = 2, labels = "auto", common.legend = F, legend = "top")
 dev.off()
+
+
+
+
+
+
+
+#plot egg area x stage
+jpeg("feature_area_by_staging_reg_d72.jpg", width = 10, height = 8, units = "in", res = 300)
+
+a <- quant_qual_long %>% filter(metric == "prop_egg") %>% filter(scorer == "Crandall") %>% filter(date =="20190123") %>% ggplot(aes(x = as.numeric(qual_stage), y = um, group = interaction(sample_ID,scorer))) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80",size = 0.5)  + geom_point(aes(shape = pCO2),size = 2)+ stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)+ labs(x = "stage", y = "eggs (% total area)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) + scale_y_continuous(limits =c(0,25)) + scale_x_continuous(n.breaks =3) +  scale_shape_manual(values = c(1,16)) + theme(legend.key=element_rect(fill="white"))
+
+#plot follicle area x stage
+b <- quant_qual_long%>% filter(metric == "prop_no_tissue") %>% filter(scorer == "Crandall")  %>% filter(date =="20190123")%>% ggplot(aes(x = as.numeric(qual_stage), y = um, group = interaction(sample_ID,scorer))) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80", size = 0.5)+ geom_point(aes(shape = pCO2), size = 2)  + stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)  + labs(x = "stage", y = "follicles (% total area)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + scale_x_continuous(n.breaks =3)+theme(legend.key=element_rect(fill="white"))
+
+
+#plot conx tissue area x stage
+c <- quant_qual_long %>% filter(metric == "prop_cnx_tissue_indve") %>% filter(scorer == "Crandall") %>% filter(date =="20190123")%>% ggplot(aes(x = as.numeric(qual_stage), y = um, group = interaction(sample_ID,scorer)))  + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80", size =0.5)+ geom_point(aes(shape = pCO2),size = 2) + stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8) + labs(x = "stage", y = "connective tissue (% total area)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + scale_x_continuous(n.breaks =3)+theme(legend.key=element_rect(fill="white"))
+
+
+d <- quant_qual_m_summ%>% filter(Date =="20190123")%>% ggplot(aes(x = as.numeric(Stage_Crandall), y = mean_perc_lumen)) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80",size = 0.5)  + geom_point(aes(shape = pCO2),size = 2)+ stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)+ labs(x = "stage", y = "lumen (% area total acini)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + theme(legend.key=element_rect(fill="white"))
+
+e <- quant_qual_m_summ %>% filter(Date =="20190123") %>% ggplot(aes(x = as.numeric(Stage_Crandall), y = mean_perc_zoa)) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80",size = 0.5)  + geom_point(aes(shape = pCO2),size = 2)+ stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)+ labs(x = "stage", y = "spermatozoa (% area total acini)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + theme(legend.key=element_rect(fill="white"))
+
+f <- quant_qual_m_summ  %>% filter(Date =="20190123") %>% ggplot(aes(x = as.numeric(Stage_Crandall), y = mean_perc_cytes)) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80",size = 0.5)  + geom_point(aes(shape = pCO2),size = 2)+ stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "right", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)+ labs(x = "stage", y = "spermatocytes (% area total acini)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + theme(legend.key=element_rect(fill="white"))
+
+ggarrange(a,b,c,d,e,f, ncol = 3,nrow = 2, labels = "auto", common.legend = T, legend = "bottom")
+dev.off()
+
+jpeg("feature_area_by_staging_reg_8dPost.jpg", width = 10, height = 8, units = "in", res = 300)
+
+a <- quant_qual_long %>% filter(metric == "prop_egg") %>% filter(scorer == "Crandall") %>% filter(date =="20190221") %>% ggplot(aes(x = as.numeric(qual_stage), y = um, group = interaction(sample_ID,scorer))) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80",size = 0.5)  + geom_point(aes(shape = pCO2),size = 2)+ stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)+ labs(x = "stage", y = "eggs (% total area)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black")) + scale_y_continuous(limits =c(0,25)) + scale_x_continuous(n.breaks =3) +  scale_shape_manual(values = c(1,16)) + theme(legend.key=element_rect(fill="white"))
+
+#plot follicle area x stage
+b <- quant_qual_long%>% filter(metric == "prop_no_tissue") %>% filter(scorer == "Crandall")  %>% filter(date =="20190221")%>% ggplot(aes(x = as.numeric(qual_stage), y = um, group = interaction(sample_ID,scorer))) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80", size = 0.5)+ geom_point(aes(shape = pCO2), size = 2)  + stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)  + labs(x = "stage", y = "follicles (% total area)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + scale_x_continuous(n.breaks =3)+theme(legend.key=element_rect(fill="white"))
+
+
+#plot conx tissue area x stage
+c <- quant_qual_long %>% filter(metric == "prop_cnx_tissue_indve") %>% filter(scorer == "Crandall") %>% filter(date =="20190221")%>% ggplot(aes(x = as.numeric(qual_stage), y = um, group = interaction(sample_ID,scorer)))  + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80", size =0.5)+ geom_point(aes(shape = pCO2),size = 2) + stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8) + labs(x = "stage", y = "connective tissue (% total area)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + scale_x_continuous(n.breaks =3)+theme(legend.key=element_rect(fill="white"))
+
+
+d <- quant_qual_m_summ%>% filter(Date =="20190221")%>% ggplot(aes(x = as.numeric(Stage_Crandall), y = mean_perc_lumen)) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80",size = 0.5)  + geom_point(aes(shape = pCO2),size = 2)+ stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)+ labs(x = "stage", y = "lumen (% area total acini)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + theme(legend.key=element_rect(fill="white"))
+
+e <- quant_qual_m_summ %>% filter(Date =="20190221") %>% ggplot(aes(x = as.numeric(Stage_Crandall), y = mean_perc_zoa)) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80",size = 0.5)  + geom_point(aes(shape = pCO2),size = 2)+ stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "left", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)+ labs(x = "stage", y = "spermatozoa (% area total acini)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + theme(legend.key=element_rect(fill="white"))
+
+f <- quant_qual_m_summ  %>% filter(Date =="20190221") %>% ggplot(aes(x = as.numeric(Stage_Crandall), y = mean_perc_cytes)) + geom_smooth(aes(group = Sex),method = "lm", color="black", fill = "gray80",size = 0.5)  + geom_point(aes(shape = pCO2),size = 2)+ stat_poly_eq(aes(group = Sex,label = paste(after_stat(adj.rr.label), "*\", \"*", after_stat(p.value.label),sep = "")), label.x = "right", label.y = "top",formula = y~x, parse = TRUE, size = 2.8)+ labs(x = "stage", y = "spermatocytes (% area total acini)", color =expression(paste(italic("p"),"CO", sep = "")[2]),shape =expression(paste(italic("p"),"CO", sep = "")[2])) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"))  + scale_shape_manual(values = c(1,16)) + theme(legend.key=element_rect(fill="white"))
+
+ggarrange(a,b,c,d,e,f, ncol = 3,nrow = 2, labels = "auto", common.legend = T, legend = "bottom")
+dev.off()
 ```
 
 

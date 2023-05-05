@@ -27,7 +27,7 @@ library(gridExtra)
 read in data
 ```{r}
 #columns: day, dead, tank, treatment
-surv_data <- read_xlsx("../../data/survival/Broodstock_survival_20181112-20190221.xlsx", sheet = "Rdata")
+surv_data <- read_xlsx("../../data/survival/Broodstock_survival_20181112-20190221.xlsx", sheet = "Rdata2")
 
 
 
@@ -46,7 +46,7 @@ surv <- Surv(time = surv_data$day, event = surv_data$dead, type = "right")
 
 ```{r}
 jpeg("surv_plot.jpg", width = 6, height = 4, units = "in", res = 300)
-ggsurvplot(survfit(surv ~ pCO2, surv_data), risk.table = FALSE, pval = FALSE, conf.int = TRUE, palette = alpha(c("#00BFC4", "#F8766D"),c(0.7,0.5)), break.x.by = 10 ,xlab = "days", legend.title = "treatment", legend.labs = c("ambient pCO2 (839 uatm)", "high pCO2 (5430 uatm)"))
+ggsurvplot(survfit(surv ~ pCO2, surv_data), risk.table = F, pval = F , conf.int = TRUE, palette = alpha(c("#00BFC4", "#F8766D"),c(0.7,0.5)), break.x.by = 10 ,xlab = "days", legend.title = "treatment", legend.labs = c("ambient pCO2 (839 uatm)", "high pCO2 (5430 uatm)"))
 dev.off()
 ```
 run cox propotional hazard test

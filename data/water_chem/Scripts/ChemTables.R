@@ -35,7 +35,7 @@ library(lmtest)
 library(car)
 
 #set working directory--------------------------------------------------------------------------------------------------
-setwd("C:/Users/samjg/Documents/My_Projects/paper-GeoduckReproDev_pH/data/water_chem/") #set working
+setwd("C:/Users/samjg/Documents/Github_repositories/paper-GeoduckReproDev_pH/data/water_chem/") #set working
 
 #read in CarbChem.R output Seawater chemistry csv file
 chem <- read.csv("Output/Seawater_chemistry_table_Output_All.csv", header=TRUE, sep=",", na.strings="NA") #load data with a header, separated by commas, with NA as NA
@@ -75,32 +75,32 @@ TABLE.tank_wide # view table
 TABLE.treatment_FINAL <- data.frame(matrix(nrow = 3, ncol = 1))
 TABLE.treatment_FINAL$N <- TABLE.treat_wide$N
 TABLE.treatment_FINAL$Treatment <- TABLE.treat_wide$Treatment
-TABLE.treatment_FINAL$Salinity <- paste(TABLE.treat_wide$mean.Salinity, TABLE.treat_wide$sem.Salinity, sep=" ± ")
-TABLE.treatment_FINAL$Temperature <- paste(TABLE.treat_wide$mean.Temperature, TABLE.treat_wide$sem.Temperature, sep=" ± ")
-TABLE.treatment_FINAL$pH <- paste(TABLE.treat_wide$mean.pH, TABLE.treat_wide$sem.pH, sep=" ± ")
-TABLE.treatment_FINAL$CO2 <- paste(TABLE.treat_wide$mean.CO2, TABLE.treat_wide$sem.CO2, sep=" ± ")
-TABLE.treatment_FINAL$pCO2 <- paste(TABLE.treat_wide$mean.pCO2, TABLE.treat_wide$sem.pCO2, sep=" ± ")
-TABLE.treatment_FINAL$HCO3 <- paste(TABLE.treat_wide$mean.HCO3, TABLE.treat_wide$sem.HCO3, sep=" ± ")
-TABLE.treatment_FINAL$CO3 <- paste(TABLE.treat_wide$mean.CO3, TABLE.treat_wide$sem.CO3, sep=" ± ")
-TABLE.treatment_FINAL$DIC <- paste(TABLE.treat_wide$mean.DIC, TABLE.treat_wide$sem.DIC, sep=" ± ")
-TABLE.treatment_FINAL$TA <- paste(TABLE.treat_wide$mean.TA, TABLE.treat_wide$sem.TA, sep=" ± ")
-TABLE.treatment_FINAL$Aragonite.Sat <- paste(TABLE.treat_wide$mean.Aragonite.Sat, TABLE.treat_wide$sem.Aragonite.Sat, sep=" ± ")
+TABLE.treatment_FINAL$Salinity <- paste(TABLE.treat_wide$mean.Salinity, TABLE.treat_wide$sem.Salinity, sep=" ? ")
+TABLE.treatment_FINAL$Temperature <- paste(TABLE.treat_wide$mean.Temperature, TABLE.treat_wide$sem.Temperature, sep=" ? ")
+TABLE.treatment_FINAL$pH <- paste(TABLE.treat_wide$mean.pH, TABLE.treat_wide$sem.pH, sep=" ? ")
+TABLE.treatment_FINAL$CO2 <- paste(TABLE.treat_wide$mean.CO2, TABLE.treat_wide$sem.CO2, sep=" ? ")
+TABLE.treatment_FINAL$pCO2 <- paste(TABLE.treat_wide$mean.pCO2, TABLE.treat_wide$sem.pCO2, sep=" ? ")
+TABLE.treatment_FINAL$HCO3 <- paste(TABLE.treat_wide$mean.HCO3, TABLE.treat_wide$sem.HCO3, sep=" ? ")
+TABLE.treatment_FINAL$CO3 <- paste(TABLE.treat_wide$mean.CO3, TABLE.treat_wide$sem.CO3, sep=" ? ")
+TABLE.treatment_FINAL$DIC <- paste(TABLE.treat_wide$mean.DIC, TABLE.treat_wide$sem.DIC, sep=" ? ")
+TABLE.treatment_FINAL$TA <- paste(TABLE.treat_wide$mean.TA, TABLE.treat_wide$sem.TA, sep=" ? ")
+TABLE.treatment_FINAL$Aragonite.Sat <- paste(TABLE.treat_wide$mean.Aragonite.Sat, TABLE.treat_wide$sem.Aragonite.Sat, sep=" ? ")
 TABLE.treatment_FINAL <- TABLE.treatment_FINAL[,-1] # view table
 
 # final table TANK
 TABLE.tank_FINAL <- data.frame(matrix(nrow = 6, ncol = 1))
 TABLE.tank_FINAL$N <- TABLE.tank_wide$N
 TABLE.tank_FINAL$Tank <- TABLE.tank_wide$Tank
-TABLE.tank_FINAL$Salinity <- paste(TABLE.tank_wide$mean.Salinity, TABLE.tank_wide$sem.Salinity, sep=" ± ")
-TABLE.tank_FINAL$Temperature <- paste(TABLE.tank_wide$mean.Temperature, TABLE.tank_wide$sem.Temperature, sep=" ± ")
-TABLE.tank_FINAL$pH <- paste(TABLE.tank_wide$mean.pH, TABLE.tank_wide$sem.pH, sep=" ± ")
-TABLE.tank_FINAL$CO2 <- paste(TABLE.tank_wide$mean.CO2, TABLE.tank_wide$sem.CO2, sep=" ± ")
-TABLE.tank_FINAL$pCO2 <- paste(TABLE.tank_wide$mean.pCO2, TABLE.tank_wide$sem.pCO2, sep=" ± ")
-TABLE.tank_FINAL$HCO3 <- paste(TABLE.tank_wide$mean.HCO3, TABLE.tank_wide$sem.HCO3, sep=" ± ")
-TABLE.tank_FINAL$CO3 <- paste(TABLE.tank_wide$mean.CO3, TABLE.tank_wide$sem.CO3, sep=" ± ")
-TABLE.tank_FINAL$DIC <- paste(TABLE.tank_wide$mean.DIC, TABLE.tank_wide$sem.DIC, sep=" ± ")
-TABLE.tank_FINAL$TA <- paste(TABLE.tank_wide$mean.TA, TABLE.tank_wide$sem.TA, sep=" ± ")
-TABLE.tank_FINAL$Aragonite.Sat <- paste(TABLE.tank_wide$mean.Aragonite.Sat, TABLE.tank_wide$sem.Aragonite.Sat, sep=" ± ")
+TABLE.tank_FINAL$Salinity <- paste(TABLE.tank_wide$mean.Salinity, TABLE.tank_wide$sem.Salinity, sep=" ? ")
+TABLE.tank_FINAL$Temperature <- paste(TABLE.tank_wide$mean.Temperature, TABLE.tank_wide$sem.Temperature, sep=" ? ")
+TABLE.tank_FINAL$pH <- paste(TABLE.tank_wide$mean.pH, TABLE.tank_wide$sem.pH, sep=" ? ")
+TABLE.tank_FINAL$CO2 <- paste(TABLE.tank_wide$mean.CO2, TABLE.tank_wide$sem.CO2, sep=" ? ")
+TABLE.tank_FINAL$pCO2 <- paste(TABLE.tank_wide$mean.pCO2, TABLE.tank_wide$sem.pCO2, sep=" ? ")
+TABLE.tank_FINAL$HCO3 <- paste(TABLE.tank_wide$mean.HCO3, TABLE.tank_wide$sem.HCO3, sep=" ? ")
+TABLE.tank_FINAL$CO3 <- paste(TABLE.tank_wide$mean.CO3, TABLE.tank_wide$sem.CO3, sep=" ? ")
+TABLE.tank_FINAL$DIC <- paste(TABLE.tank_wide$mean.DIC, TABLE.tank_wide$sem.DIC, sep=" ? ")
+TABLE.tank_FINAL$TA <- paste(TABLE.tank_wide$mean.TA, TABLE.tank_wide$sem.TA, sep=" ? ")
+TABLE.tank_FINAL$Aragonite.Sat <- paste(TABLE.tank_wide$mean.Aragonite.Sat, TABLE.tank_wide$sem.Aragonite.Sat, sep=" ? ")
 TABLE.tank_FINAL <- TABLE.tank_FINAL[,-1] # view table
 
 # save output table

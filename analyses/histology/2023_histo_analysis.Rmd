@@ -25,8 +25,9 @@ Read in data
 ```{r}
 female_data <- read.csv("../../data/histology/Female_Gonad/20200820_Female_Gonad_RESULTS.csv", stringsAsFactors = F,colClasses = c(rep("character",4),rep("numeric",7)))
 
-
+#read in ind. egg size measurements
 egg_size <- read.csv("../../data/histology/Female_Gonad/egg_size.csv", stringsAsFactors = F, colClasses = c("character","character","numeric"))
+
 
 foll_size <- read.csv("../../data/histology/Female_Gonad/follicle_size.csv", stringsAsFactors = F, colClasses = c("character","character","numeric","numeric") )
 
@@ -488,6 +489,18 @@ geom_bar(stat = "identity", color = "black") +
 geom_errorbar(aes(ymax = y_pos + sd, ymin=y_pos - sd), stat = "identity", width = 0.1, alpha = 0.7, position = pd) + facet_wrap(~date)+ scale_alpha_manual(values=c(seq(0.3,1, length.out = 3))) + theme_bw() + scale_y_continuous(breaks = seq(from = 0, to = 100, by = 10)) + ylab("percent of total tissue area (mean ± s.d.)") + theme(axis.title.x = element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank()) + scale_fill_manual(values = c("#00BFC4", "#F8766D")) + ggtitle("Female quantitative histology scoring")
 dev.off()
 
+
+
+
+#plot all metrics for female quantitative data
+jpeg("all_female_metrics_facets.jpg", width = 12, height = 6, units = "in", res = 300)
+merge(female_data_STACKED, data.frame(cbind(metric = sort(unique(female_data_STACKED[!grepl("total.area..um.|sd.egg.size",female_data_STACKED$metric),"metric"])), metric2 = c("connective tissue area (um2)","egg area (um2)", "mean egg size (um2)","median egg size (um2)", "follicle area (um2)", "number of eggs", "number of eggs per um2", "proportion of connective tissue (%)", "proportion of egg (%)", "proportion of follicle (%)"))), by = "metric")%>% group_by(metric) %>% mutate(date = ifelse(date == "20190123", "72 d", "8 d post")) %>% mutate(pCO2 = ifelse(pH == "low", "elevated", "ambient")) %>% ggplot(aes(x = date, y = um, fill = pCO2)) + geom_bar(stat = "identity", position = "dodge")+ facet_wrap(~metric2, scale = "free", ncol = 5)+ theme_bw() + labs(x = NULL, y = NULL) + theme(legend.position = "top") + scale_fill_manual(values = c("#00BFC4","#F8766D"))
+dev.off()
+
+#make table for ANOVA results for female data
+jpeg("female_ANOVA_table.jpg", width = 7, height = 4, units = "in", res = 300)
+female_data_STACKED %>% mutate(time = ifelse(date == "20190123", "72 d", "8 d post"))%>% group_by(metric) %>% do(model = broom::tidy(aov(um ~ pH * time, data =.)) ) %>% unnest_wider(model)  %>% dplyr::select(c(metric, term,statistic, p.value)) %>% unnest(term, statistic, p.value) %>% pivot_longer(names_to = "term2", values_to = "value", cols = 3:4) %>% mutate(name = paste0(term," ",term2)) %>% filter(term != "Residuals") %>% dplyr::select(metric, name, value) %>% pivot_wider(names_from = name, values_from = value) %>% filter(metric != 'sd.egg.size') %>% filter(metric != 'total.area..um.') %>% mutate(metric = c("connective tissue area (um2)","egg area (um2)", "mean egg size (um2)","median egg size (um2)", "follicle area (um2)", "number of eggs", "number of eggs per um2", "proportion of connective tissue (%)", "proportion of egg (%)", "proportion of follicle (%)")) %>% kbl(caption = "ANOVA results: metric ~ pH * time") %>%  kable_classic(full_width = F, html_font = "Cambria")
+dev.off()
 ```
 
 

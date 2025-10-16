@@ -1,0 +1,340 @@
+---
+title: "Female Egg Size & Tissue Composition: Stage Effects"
+author: "Your Name"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: false
+fontsize: 11pt
+---
+# Overview:
+
+- Per‑egg **mixed model** of log2 egg size vs. female stage (random intercepts for clam; tank optionally included as RE collapses to 0).  
+- **Estimated marginal means** (EMMs) and **pairwise contrasts** across stages.  
+- Female **tissue composition** analysis using CLR/Aitchison geometry with **PERMANOVA** (stage + treatment; permutations blocked by tank) and dispersion diagnostics.
+
+# Setup
+
+```{r setup, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readxl)
+library(lme4)
+library(emmeans)
+library(DescTools)
+library(compositions) # clr, acomp
+library(vegan) # adonis2, betadisper
+
+```
+
+# Load raw data (unmodified)
+```{r read-data}
+female_data_raw <- read.csv(
+  "../../data/histology/Female_Gonad/20200820_Female_Gonad_RESULTS.csv",
+  stringsAsFactors = FALSE,
+  colClasses = c(rep("character",4), rep("numeric",7))
+)
+
+egg_size_raw <- read.csv(
+  "../../data/histology/Female_Gonad/egg_size.csv",
+  stringsAsFactors = FALSE,
+  colClasses = c("character","character","numeric")
+)
+
+foll_size_raw <- read.csv(
+  "../../data/histology/Female_Gonad/follicle_size.csv",
+  stringsAsFactors = FALSE,
+  colClasses = c("character","character","numeric","numeric")
+)
+
+staging_raw <- read_xlsx("../../data/histology/HistologyScores_STRIGG.xlsx")
+```
+
+# Normalize IDs and Dates
+Staging has dates like `123`/`221` and IDs with/without leading zeros. Egg and female tables use `YYYYMMDD` and mixed ID padding. I harmonized keys: `sample_ID` (no leading zeros) and `Date_chr` (YYYYMMDD).
+
+```{r normalize}
+strip_leading_zeros <- function(x) sub("^0+", "", as.character(x))
+map_staging_date_to_YYYYMMDD <- function(num_date) {
+  # Map 123 -> 20190123, 221 -> 20190221
+  out <- ifelse(num_date == 123, "20190123",
+         ifelse(num_date == 221, "20190221", NA_character_))
+  return(out)
+}
+
+as_ordered_1to7 <- function(x) factor(as.character(x), levels = as.character(1:7), ordered = TRUE)
+
+# Staging (prefer Crandall where present; else Trigg based on previous code)
+staging <- staging_raw %>%
+  transmute(
+    Tank        = factor(Tank),
+    Treatment   = factor(Treatment),
+    Date_chr    = map_staging_date_to_YYYYMMDD(as.numeric(Date)),
+    sample_ID   = strip_leading_zeros(`Geoduck.ID`),
+    Sex         = as.character(Sex),
+    Stage_Trigg = as_ordered_1to7(Stage_Trigg),
+    Stage_Crandall = as_ordered_1to7(Stage_Crandall)
+  ) %>%
+  mutate(
+    Stage_use = ifelse(is.na(as.character(Stage_Crandall)),
+                       as.character(Stage_Trigg),
+                       as.character(Stage_Crandall)),
+    Stage_use = factor(Stage_use, levels = as.character(1:7), ordered = TRUE),
+    Stage_num = as.numeric(Stage_use)
+  )
+
+# Egg sizes: rename to common keys
+egg_size <- egg_size_raw %>%
+  transmute(
+    Date_chr  = as.character(date),
+    sample_ID = strip_leading_zeros(animal),
+    egg_size  = as.numeric(egg.size)
+  )
+
+# Female quantitative table: add Date_chr, standardize IDs
+declared_tank <- unique(female_data_raw$tank)
+
+female_data <- female_data_raw %>%
+  mutate(
+    sample_ID = strip_leading_zeros(sample_ID),
+    Date_chr  = as.character(date),
+    tank      = factor(tank),
+    pH        = as.character(pH)
+  )
+
+# Keep F for egg-size modeling
+stagingF <- staging %>% filter(Sex %in% c("F","Female")) %>%
+  arrange(sample_ID, Date_chr, Tank, Treatment) %>%
+  group_by(sample_ID, Date_chr) %>%
+  slice(1) %>% ungroup()
+```
+
+# Model A: Per‑egg mixed model of log2 egg size vs. Stage
+## Model
+**log2(egg size)** as a function of **Developmental Stage** with a random intercept for **clam** (sample_ID).Tank is included but can drop out (variance is ~0):
+
+\[ \log_2(\text{egg}_\text{ij}) = \beta_0 + \beta_1\,\text{Stage}_\text{i} + u_{\text{sample}_i} + u_{\text{tank}_i} + \varepsilon_{ij} \]
+
+- Response: per‑egg area (µm²), log2‑transformed.
+- Fixed effect: Stage (ordered; 5–7 in females).
+- Random effects: sample_ID (clam), Tank (optional; variance may be ~0).
+
+## 2) Run the model
+```{r modelA-fit, message=FALSE, warning=FALSE}
+# Join egg rows to female staging
+egg_per_egg <- egg_size %>%
+  left_join(stagingF %>% dplyr::select(sample_ID, Date_chr, Sex, Stage_use, Stage_num, Tank, Treatment),
+            by = c("sample_ID","Date_chr")) %>%
+  filter(!is.na(Sex)) %>%
+  mutate(log2_egg = log2(egg_size))
+
+# Mixed model: Stage numeric + random intercepts for Tank and sample_ID
+m_lmm <- lmer(log2_egg ~ Stage_num + (1|Tank) + (1|sample_ID), data = egg_per_egg)
+summary(m_lmm)
+```
+
+## 3) Interpret the model
+- **“Boundary (singular) fit”**; the Tank random-effect variance is essentially **0** (i.e., no detectable tank-to-tank variability beyond clams). That’s acceptable; inference on Stage is unaffected.
+- The **Stage_num** coefficient on log2 scale can be exponentiated base 2 to interpret as a **multiplicative change** per stage.
+
+```{r modelA-emmeans}
+# EMMs at stages 5,6,7 and back-transform to µm^2
+em_num <- emmeans(m_lmm, ~ Stage_num, at = list(Stage_num = c(5,6,7)))
+bt_num <- transform(as.data.frame(em_num),
+                    mean_um2 = 2^emmean,
+                    LCL_um2  = 2^asymp.LCL,
+                    UCL_um2  = 2^asymp.UCL)
+knitr::kable(bt_num[,c("Stage_num","mean_um2","LCL_um2","UCL_um2")],
+             col.names = c("Stage","Mean (µm²)","Lower 95%","Upper 95%"),
+             digits = 2)
+```
+
+**Pairwise stage comparisons (categorical stage)**
+```{r modelA-contrasts}
+egg_per_egg$Stage_use <- droplevels(egg_per_egg$Stage_use)
+m_fac <- lmer(log2_egg ~ Stage_use + (1|sample_ID), data = egg_per_egg)
+em_fac <- emmeans(m_fac, ~ Stage_use)
+ct_fac <- pairs(em_fac)
+ct_fac
+```
+
+**Summary**  
+- EMMs show egg size increases from stage 5 → 6 → 7.  
+- Tukey‑adjusted pairwise contrasts (on log2 scale) indicate **6 > 5**, **7 > 6**, and **7 > 5**; estimates can be converted to percent change via \( 2^{\Delta}-1 \).
+
+**Quick visualization (optional).**
+```{r modelA-plot, fig.width=6, fig.height=4}
+pp <- ggplot(egg_per_egg, aes(x = Stage_use, y = log2_egg)) +
+  geom_boxplot(outlier.shape = NA, width = 0.6) +
+  geom_jitter(width = 0.15, alpha = 0.25, size = 0.6) +
+  theme_bw() +
+  labs(x = "Stage", y = "log2 egg size (µm²)")
+pp
+```
+
+# Model B: Median egg size per clam vs. Stage (descriptive)
+## 1) Model
+We reduce within‑clam replication by taking each clam’s **median egg size** (per date), then test for monotonic increase across ordered stages using the **Jonckheere–Terpstra** test.
+
+## 2) Run the model
+```{r modelB-run}
+egg_median <- egg_size %>%
+  group_by(sample_ID, Date_chr) %>%
+  summarise(med_egg_size = median(egg_size, na.rm = TRUE), .groups = "drop") %>%
+  left_join(stagingF %>% dplyr::select(sample_ID, Date_chr, Stage_use), by = c("sample_ID","Date_chr")) %>%
+  mutate(Stage_Trigg = Stage_use)
+
+jt <- DescTools::JonckheereTerpstraTest(med_egg_size ~ Stage_Trigg, data = egg_median)
+jt
+```
+
+## 3) Interpret the model
+A significant positive trend (small p‑value) supports **monotonic increase** in median egg size across ordered stages.
+
+# Model C: Tissue composition vs. Stage (CLR/Aitchison PERMANOVA)
+## 1) Introduce the model
+Egg, follicle, and connective areas form a **composition** (parts sum to a whole). We transform with **CLR** and test **Stage** (primary) while adjusting for **Treatment**, using **PERMANOVA** with permutations **blocked by Tank**. We also check **dispersion homogeneity**.
+
+## 2) Run the model
+```{r modelC-run, message=FALSE, warning=FALSE}
+# Build per‑clam composition and join female staging
+female_comp <- female_data %>%
+  transmute(
+    sample_ID,
+    Date_chr,
+    Tank   = factor(tank),
+    Treatment = factor(pH),
+    prop_egg  = (egg.area..based.on.ind.eggs. / total.area..um.) * 100,
+    prop_foll = (no.tissue.area / total.area..um.) * 100,
+    prop_cnx  = (connective.tissue.area..egg.based.on.indiv. / total.area..um.) * 100
+  ) %>%
+  left_join(stagingF %>% dplyr::select(sample_ID, Date_chr, Stage_use, Stage_num),
+            by = c("sample_ID","Date_chr")) %>%
+  filter(!is.na(Stage_use))
+
+# CLR transform (Aitchison geometry)
+eps   <- 1e-6
+X_raw <- as.matrix(female_comp[, c("prop_egg","prop_foll","prop_cnx")])
+X_pos <- pmax(X_raw, eps)
+X_pos <- X_pos / rowSums(X_pos)
+X_clr <- clr(acomp(X_pos))
+D_aith <- dist(X_clr, method = "euclidean")
+
+# PERMANOVA: Stage + Treatment; permutations blocked by Tank
+set.seed(1)
+perm <- adonis2(D_aith ~ Stage_num + Treatment,
+                data = female_comp,
+                permutations = 9999,
+                by = "margin",
+                strata = female_comp$Tank)
+perm
+
+# Dispersion check (should be non‑significant)
+bd <- betadisper(D_aith, group = female_comp$Stage_num)
+list(anova = anova(bd), perm = permutest(bd, permutations = 9999))
+```
+
+## 3) Interpret the model
+- **Stage effect** on composition (CLR/Aitchison distance) is tested while **accounting for Treatment** and **blocking permutations within Tank**.  
+- Non‑significant dispersion tests indicate differences are not driven by unequal within‑group spread.
+
+**Optional visualization: CLR‑PCA**
+```{r modelC-plot, fig.width=6, fig.height=4}
+pr <- prcomp(X_clr, scale. = FALSE)
+df_pca <- cbind(as.data.frame(pr$x[,1:2]), Stage = female_comp$Stage_use)
+
+ggplot(df_pca, aes(PC1, PC2, color = Stage)) +
+  geom_point(size = 2, alpha = 0.85) +
+  theme_bw() +
+  coord_equal() +
+  labs(title = "CLR‑PCA of female tissue composition", color = "Stage")
+```
+
+# Per-egg distribution by stage
+```{r}
+p_eggs <- ggplot(egg_per_egg, aes(x = Stage_use, y = log2_egg)) +
+geom_boxplot(outlier.shape = NA, width = 0.65) +
+geom_jitter(width = 0.15, alpha = 0.25, size = 0.6) +
+theme_bw() +
+labs(x = "Stage (Crandall if available, else Trigg)",
+y = expression(paste(log[2], " egg size (",µ,"m"^2,")")))
+
+
+print(p_eggs)
+# ggsave("fig_per_egg_boxjitter.png", p_eggs, width = 6, height = 4, dpi = 300```
+```
+
+# EMMS by stage (as factor) back transformed to um^2
+```{r}
+# Ensure factor model is available
+if (!exists("m_fac")) m_fac <- lme4::lmer(log2_egg ~ Stage_use + (1|sample_ID), data = egg_per_egg)
+
+
+em_fac <- emmeans(m_fac, ~ Stage_use)
+em_fac_df <- as.data.frame(em_fac) %>%
+mutate(mean_um2 = 2^emmean,
+LCL_um2 = 2^asymp.LCL,
+UCL_um2 = 2^asymp.UCL)
+
+
+p_emm_fac <- ggplot(em_fac_df, aes(x = Stage_use, y = mean_um2)) +
+geom_point(size = 3) +
+geom_errorbar(aes(ymin = LCL_um2, ymax = UCL_um2), width = 0.15) +
+theme_bw() +
+labs(x = "Stage",
+y = expression(paste("Estimated mean egg size (",µ,"m"^2,")")))
+
+
+print(p_emm_fac)
+# ggsave("fig_emmeans_stage_factor.png", p_emm_fac, width = 6, height = 4, dpi = 300)
+```
+
+# EMMS by stage (as numeric which assumes equal time steps) back transformed to um^2
+```{r}
+em_num <- emmeans(m_lmm, ~ Stage_num, at = list(Stage_num = c(5, 6, 7)))
+em_num_df <- as.data.frame(em_num) %>%
+mutate(Stage_num = as.factor(Stage_num),
+mean_um2 = 2^emmean,
+LCL_um2 = 2^asymp.LCL,
+UCL_um2 = 2^asymp.UCL)
+
+
+p_emm_num <- ggplot(em_num_df, aes(x = Stage_num, y = mean_um2, group = 1)) +
+geom_line() + geom_point(size = 3) +
+geom_errorbar(aes(ymin = LCL_um2, ymax = UCL_um2), width = 0.15) +
+theme_bw() +
+labs(x = "Stage (numeric)",
+y = expression(paste("Estimated mean egg size (",µ,"m"^2,")")))
+
+
+print(p_emm_num)
+# ggsave("fig_emmeans_stage_numeric.png", p_emm_num, width = 6, height = 4, dpi = 300)
+
+```
+
+# CLR-PCA of tissue composition
+```{r}
+if (!exists("pr")) pr <- prcomp(X_clr, scale. = FALSE)
+
+
+pca_df <- cbind(as.data.frame(pr$x[, 1:2]),
+Stage = female_comp$Stage_use,
+Treatment = female_comp$Treatment)
+
+
+p_pca <- ggplot(pca_df, aes(PC1, PC2, color = Stage, shape = Treatment)) +
+geom_point(size = 3, alpha = 0.9) +
+theme_bw() + coord_equal() +
+labs(title = "CLR-PCA of female tissue composition",
+x = paste0("PC1 (", round(100 * summary(pr)$importance[2,1], 1), "% var)"),
+y = paste0("PC2 (", round(100 * summary(pr)$importance[2,2], 1), "% var)"))
+
+
+print(p_pca)
+# ggsave("fig_clr_pca.png", p_pca, width = 6, height = 5, dpi = 300)
+
+```
